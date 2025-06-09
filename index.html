@@ -734,6 +734,37 @@
             } else {
                 console.warn('Fare amount input element not found.');
             }
+
+            // --- New: Add event listener for Phone Number formatting ---
+            const customerPhoneInput = document.getElementById('customerPhone');
+            if (customerPhoneInput) {
+                customerPhoneInput.addEventListener('input', function() {
+                    let phoneNumber = this.value.replace(/\D/g, ''); // Remove all non-digits
+
+                    if (phoneNumber.length > 10) {
+                        phoneNumber = phoneNumber.substring(0, 10); // Limit to 10 digits
+                    }
+
+                    let formattedPhoneNumber = '';
+                    if (phoneNumber.length > 0) {
+                        formattedPhoneNumber = '(';
+                        if (phoneNumber.length > 3) {
+                            formattedPhoneNumber += phoneNumber.substring(0, 3) + ') ';
+                            if (phoneNumber.length > 6) {
+                                formattedPhoneNumber += phoneNumber.substring(3, 6) + '-';
+                                formattedPhoneNumber += phoneNumber.substring(6, 10);
+                            } else {
+                                formattedPhoneNumber += phoneNumber.substring(3, 6);
+                            }
+                        } else {
+                            formattedPhoneNumber += phoneNumber;
+                        }
+                    }
+                    this.value = formattedPhoneNumber;
+                });
+            } else {
+                console.warn('Customer phone input element not found.');
+            }
         });
 
         // Function to load common locations from localStorage or use defaults
