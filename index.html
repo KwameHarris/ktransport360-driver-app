@@ -662,6 +662,10 @@
         // Key for storing common locations in localStorage
         const COMMON_LOCATIONS_STORAGE_KEY = 'ktransport360_common_locations';
 
+        // NEW: This is the URL for your Google Apps Script Web App (from Part 1, Step 5)
+        // You MUST replace 'YOUR_COPIED_WEB_APP_URL_HERE' with the actual URL you got!
+        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKB2zcg15l2_oogrDt7in6cQD47k6PEkWGZ2g_1MpsOhNrcMCQl0v_C01fwY5kBv7u/exec'; 
+
         // Initialize App
         document.addEventListener('DOMContentLoaded', function() {
             console.log('App starting...');
@@ -750,15 +754,21 @@
                     let phoneNumber = this.value.replace(/\D/g, ''); // Remove all non-digits
 
                     let formattedPhoneNumber = '';
-                    if (phoneNumber.length === 11) {
-                        // Assumes first digit is country code if 11 digits
-                        formattedPhoneNumber = `${phoneNumber.substring(0, 1)}-(${phoneNumber.substring(1, 4)}) ${phoneNumber.substring(4, 7)}-${phoneNumber.substring(7, 11)}`;
-                    } else if (phoneNumber.length === 10) {
-                        formattedPhoneNumber = `(${phoneNumber.substring(0, 3)}) ${phoneNumber.substring(3, 6)}-${phoneNumber.substring(6, 10)}`;
-                    } else {
-                        formattedPhoneNumber = phoneNumber; // Keep as-is for less than 10 digits
+                    if (phoneNumber.length > 0) {
+                        if (phoneNumber.length === 11 && phoneNumber.startsWith('1')) {
+                            // Format for 1-(XXX) XXX-XXXX if 11 digits and starts with 1
+                            formattedPhoneNumber = `1-(${phoneNumber.substring(1, 4)}) ${phoneNumber.substring(4, 7)}-${phoneNumber.substring(7, 11)}`;
+                        } else if (phoneNumber.length >= 10) {
+                            // Format for (XXX) XXX-XXXX if 10 digits
+                            formattedPhoneNumber = `(${phoneNumber.substring(0, 3)}) ${phoneNumber.substring(3, 6)}-${phoneNumber.substring(6, 10)}`;
+                        } else if (phoneNumber.length > 6) {
+                            formattedPhoneNumber = `(${phoneNumber.substring(0, 3)}) ${phoneNumber.substring(3, 6)}-${phoneNumber.substring(6)}`;
+                        } else if (phoneNumber.length > 3) {
+                            formattedPhoneNumber = `(${phoneNumber.substring(0, 3)}) ${phoneNumber.substring(3)}`;
+                        } else {
+                            formattedPhoneNumber = phoneNumber; // Keep as-is for less than 3 digits
+                        }
                     }
-                    
                     this.value = formattedPhoneNumber;
                 });
             } else {
@@ -1017,7 +1027,7 @@
             console.log('Rendering today\'s rides.');
             const today = new Date();
             const todaysDateString = today.toISOString().split('T')[0];
-            const nowTime = today.getHours() * 60 + today.getMinutes(); // Current time in minutes from midnight (Corrected to use `today` object)
+            const nowTime = today.getHours() * 60 + today.getMinutes(); // Current time in minutes from midnight
 
             const todaysRides = ridesData
                                 .filter(ride => ride.date === todaysDateString)
@@ -1241,7 +1251,7 @@
         }
 
         // Handle customer drop-off action
-        function dropoffCustomer(rideId) {
+        async function dropoffCustomer(rideId) { // Changed to async to await Google Sheet send
             console.log('Attempting drop-off for ride ID:', rideId);
             const ride = ridesData.find(r => r.id === rideId);
             if (!ride) {
@@ -1257,6 +1267,16 @@
             ride.status = 'completed';
             
             saveData(); // Save changes to localStorage
+
+            // --- NEW: Send completed ride data to Google Sheet ---
+            // Only send if the URL is configured
+            if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== 'YOUR_COPIED_WEB_APP_URL_HERE') {
+                await sendRideToGoogleSheet(ride); // Await the send operation
+            } else {
+                console.warn('GOOGLE_SCRIPT_URL not configured. Skipping sending data to Google Sheet.');
+                showNotification('Data saved locally. Google Sheet sync not configured.');
+            }
+            // --- END NEW ---
             
             // Re-render the current active screen to reflect the status change
             if (document.getElementById('todaysScreen').classList.contains('active')) {
@@ -1610,6 +1630,47 @@
             showNotification('Fatal Error! Check console for details. 🚨');
             return false; // Suppress default browser error reporting
         };
+
+        // Function to send completed ride data to Google Sheet
+        async function sendRideToGoogleSheet(ride) {
+            console.log('Attempting to send ride data to Google Sheet:', ride);
+
+            // Format the data exactly how your Google Script expects it
+            const dataToSend = {
+                type: 'completed_ride', // This tells our robot friend what kind of data it is
+                customerName: ride.name,
+                customerPhone: ride.phone,
+                pickupDate: ride.date,
+                pickupTime: ride.scheduledTime, // This is the originally scheduled time
+                pickupLocation: ride.pickupLocation,
+                dropoffLocation: ride.dropoffLocation,
+                fareAmount: ride.fare,
+                pickupTimeActual: ride.pickupTime, // Actual pickup time
+                dropoffTimeActual: ride.dropoffTime, // Actual dropoff time
+                timeAddedToApp: ride.addedAt ? new Date(ride.addedAt).toLocaleString() : '' // When the ride was first entered
+            };
+
+            try {
+                // IMPORTANT: This uses 'no-cors' mode because of how Google Apps Script web apps are deployed.
+                // This means we send the data, but we don't get a direct "success" message back in the browser.
+                // You'll need to check your Google Sheet to confirm it was added.
+                const response = await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(dataToSend),
+                    mode: 'no-cors' // Required for Google Apps Script web app deployments
+                });
+
+                console.log('Request to Google Script sent. Check your spreadsheet for confirmation.');
+                showNotification('☁️ Ride data sent to Google Sheet!');
+
+            } catch (error) {
+                console.error('Error sending ride data to Google Sheet:', error);
+                showNotification('❌ Failed to send ride to Google Sheet. Check internet & script URL.');
+            }
+        }
     </script>
 </body>
 </html>
