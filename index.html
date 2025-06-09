@@ -1654,33 +1654,69 @@
         };
 
         // Function to send completed ride data to Google Sheet
-        async function sendRideToGoogleSheet(ride) {
-            console.log('Attempting to send ride data to Google Sheet:', ride);
+        async function sendRideToGoogleSheet(ride) {// Function to send completed ride data to Google Sheet using a hidden iframe/form
+async function sendRideToGoogleSheet(ride) {
+    console.log('Attempting to send ride data to Google Sheet via hidden form:', ride);
 
-            // NEW: Use FormData for highly compatible sending to Google Apps Script.
-            // This will send data as 'multipart/form-data' or 'application/x-www-form-urlencoded'
-            // depending on browser, which Google Apps Script handles well in e.parameter.
-            const formData = new FormData();
-            formData.append('type', 'completed_ride'); // Telling our script what kind of data it is
-            formData.append('customerName', ride.name);
-            formData.append('customerPhone', ride.phone);
-            formData.append('pickupLocation', ride.pickupLocation);
-            formData.append('dropoffLocation', ride.dropoffLocation);
-            formData.append('scheduledTime', ride.scheduledTime);
-            formData.append('pickupTimeActual', ride.pickupTime);
-            formData.append('dropoffTimeActual', ride.dropoffTime);
-            formData.append('fareAmount', ride.fare);
-            // Do NOT append 'timeAddedToApp' as it's not in your Google Sheet columns.
+    // This is the URL for your Google Apps Script Web App
+    const scriptUrl = GOOGLE_SCRIPT_URL; 
 
-            try {
-                // With FormData, the browser automatically sets the correct 'Content-Type' header.
-                // We specifically remove the 'Content-Type' header here to let FormData manage it.
-                const response = await fetch(GOOGLE_SCRIPT_URL, {
-                    method: 'POST',
-                    // headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, // REMOVED THIS LINE
-                    body: formData, // Send the FormData object directly
-                    mode: 'no-cors' 
-                });
+    // Create a hidden iframe to receive the response
+    let iframe = document.getElementById('google-script-iframe');
+    if (!iframe) {
+        iframe = document.createElement('iframe');
+        iframe.style.display = 'none'; // Keep it invisible
+        iframe.id = 'google-script-iframe';
+        document.body.appendChild(iframe);
+    }
+
+    // Create a hidden form
+    const form = document.createElement('form');
+    form.target = iframe.id; // Target the hidden iframe
+    form.action = scriptUrl;
+    form.method = 'POST';
+    form.style.display = 'none'; // Keep it invisible
+
+    // Add all the ride data as hidden input fields
+    function addHiddenField(name, value) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = name;
+        input.value = value;
+        form.appendChild(input);
+    }
+
+    addHiddenField('type', 'completed_ride'); // Required by your Apps Script
+    addHiddenField('customerName', ride.name);
+    addHiddenField('customerPhone', ride.phone);
+    addHiddenField('pickupLocation', ride.pickupLocation);
+    addHiddenField('dropoffLocation', ride.dropoffLocation);
+    addHiddenField('scheduledTime', ride.scheduledTime);
+    addHiddenField('pickupTimeActual', ride.pickupTime); // Actual pickup time
+    addHiddenField('dropoffTimeActual', ride.dropoffTime); // Actual dropoff time
+    addHiddenField('fareAmount', ride.fare);
+
+    document.body.appendChild(form); // Add the form to the body
+
+    // Submit the form
+    try {
+        form.submit();
+        console.log('Hidden form submitted to Google Script.');
+        showNotification('☁️ Ride data sent to Google Sheet (via form)!');
+        return true; // Indicate that the form was submitted
+    } catch (error) {
+        console.error('Error submitting hidden form to Google Script:', error);
+        showNotification('❌ Failed to send ride to Google Sheet (form error).');
+        return false; // Indicate submission failed
+    } finally {
+        // Clean up the form after a short delay
+        setTimeout(() => {
+            if (form.parentNode) {
+                form.parentNode.removeChild(form);
+            }
+        }, 1000); 
+    }
+}});
 
                 console.log('Request to Google Script sent. Check your spreadsheet for confirmation.');
                 showNotification('☁️ Ride data sent to Google Sheet!');
