@@ -743,31 +743,22 @@
                 console.warn('Fare amount input element not found.');
             }
 
-            // --- New: Add event listener for Phone Number formatting ---
+            // --- Phone Number formatting ---
             const customerPhoneInput = document.getElementById('customerPhone');
             if (customerPhoneInput) {
                 customerPhoneInput.addEventListener('input', function() {
                     let phoneNumber = this.value.replace(/\D/g, ''); // Remove all non-digits
 
-                    if (phoneNumber.length > 10) {
-                        phoneNumber = phoneNumber.substring(0, 10); // Limit to 10 digits
-                    }
-
                     let formattedPhoneNumber = '';
-                    if (phoneNumber.length > 0) {
-                        formattedPhoneNumber = '(';
-                        if (phoneNumber.length > 3) {
-                            formattedPhoneNumber += phoneNumber.substring(0, 3) + ') ';
-                            if (phoneNumber.length > 6) {
-                                formattedPhoneNumber += phoneNumber.substring(3, 6) + '-';
-                                formattedPhoneNumber += phoneNumber.substring(6, 10);
-                            } else {
-                                formattedPhoneNumber += phoneNumber.substring(3, 6);
-                            }
-                        } else {
-                            formattedPhoneNumber += phoneNumber;
-                        }
+                    if (phoneNumber.length === 11) {
+                        // Assumes first digit is country code if 11 digits
+                        formattedPhoneNumber = `${phoneNumber.substring(0, 1)}-(${phoneNumber.substring(1, 4)}) ${phoneNumber.substring(4, 7)}-${phoneNumber.substring(7, 11)}`;
+                    } else if (phoneNumber.length === 10) {
+                        formattedPhoneNumber = `(${phoneNumber.substring(0, 3)}) ${phoneNumber.substring(3, 6)}-${phoneNumber.substring(6, 10)}`;
+                    } else {
+                        formattedPhoneNumber = phoneNumber; // Keep as-is for less than 10 digits
                     }
+                    
                     this.value = formattedPhoneNumber;
                 });
             } else {
@@ -1026,7 +1017,7 @@
             console.log('Rendering today\'s rides.');
             const today = new Date();
             const todaysDateString = today.toISOString().split('T')[0];
-            const nowTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes from midnight
+            const nowTime = today.getHours() * 60 + today.getMinutes(); // Current time in minutes from midnight (Corrected to use `today` object)
 
             const todaysRides = ridesData
                                 .filter(ride => ride.date === todaysDateString)
