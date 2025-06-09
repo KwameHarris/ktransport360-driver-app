@@ -658,9 +658,13 @@
 
         // App Data Storage
         let ridesData = [];
+        // NEW: Array to hold rides that couldn't be sent to Google Sheet immediately
+        let pendingUploads = [];
 
         // Key for storing common locations in localStorage
         const COMMON_LOCATIONS_STORAGE_KEY = 'ktransport360_common_locations';
+        // NEW: Key for storing pending uploads in localStorage
+        const PENDING_UPLOADS_STORAGE_KEY = 'ktransport360_pending_uploads';
 
         // NEW: This is the URL for your Google Apps Script Web App (from Part 1, Step 5)
         // You MUST replace 'YOUR_COPIED_WEB_APP_URL_HERE' with the actual URL you got!
@@ -671,7 +675,7 @@
             console.log('App starting...');
             
             // Load data from localStorage (rides and common locations)
-            loadData(); // Load rides data
+            loadData(); // Load rides data and pending uploads
             loadCommonLocationsData(); // Load/initialize common locations from localStorage/defaults
             
             // If no rides are loaded from localStorage, initialize with an empty list.
@@ -774,6 +778,9 @@
             } else {
                 console.warn('Customer phone input element not found.');
             }
+
+            // NEW: Set up interval to process pending uploads every 10 seconds
+            setInterval(processPendingUploads, 10000); 
         });
 
         // Function to load common locations from localStorage or use defaults
@@ -879,20 +886,30 @@
             }
         }
 
-        // Load data from localStorage (this handles ridesData)
+        // Load data from localStorage (this handles ridesData and pendingUploads)
         function loadData() {
             try {
-                const saved = localStorage.getItem('ktransport360_rides');
-                if (saved) {
-                    ridesData = JSON.parse(saved);
+                const savedRides = localStorage.getItem('ktransport360_rides');
+                if (savedRides) {
+                    ridesData = JSON.parse(savedRides);
                     console.log('Rides data loaded:', ridesData.length, 'rides');
                 } else {
                     ridesData = [];
                 }
+
+                const savedPending = localStorage.getItem(PENDING_UPLOADS_STORAGE_KEY);
+                if (savedPending) {
+                    pendingUploads = JSON.parse(savedPending);
+                    console.log('Pending uploads loaded:', pendingUploads.length, 'rides');
+                } else {
+                    pendingUploads = [];
+                }
+
             }
             catch (error) {
-                console.error('Error loading rides data from localStorage:', error);
+                console.error('Error loading data from localStorage:', error);
                 ridesData = []; // Reset if error occurs to prevent further issues
+                pendingUploads = [];
             }
         }
 
@@ -903,14 +920,15 @@
             console.log('Sample data initialization complete: No initial rides.');
         }
 
-        // Save rides data to localStorage
+        // Save rides data and pending uploads to localStorage
         function saveData() {
             try {
                 localStorage.setItem('ktransport360_rides', JSON.stringify(ridesData));
-                console.log('Rides data saved successfully to localStorage.');
+                localStorage.setItem(PENDING_UPLOADS_STORAGE_KEY, JSON.stringify(pendingUploads)); // Save pending uploads
+                console.log('App data (rides and pending uploads) saved successfully to localStorage.');
             }
             catch (error) {
-                console.error('Error saving rides data to localStorage:', error);
+                console.error('Error saving app data to localStorage:', error);
             }
         }
 
@@ -1268,10 +1286,14 @@
             
             saveData(); // Save changes to localStorage
 
-            // --- NEW: Send completed ride data to Google Sheet ---
-            // Only send if the URL is configured
+            // --- NEW: Try to send completed ride data to Google Sheet ---
+            // Only attempt if the URL is configured
             if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== 'YOUR_COPIED_WEB_APP_URL_HERE') {
-                await sendRideToGoogleSheet(ride); // Await the send operation
+                const sentSuccessfully = await sendRideToGoogleSheet(ride);
+                if (!sentSuccessfully) {
+                    addRideToPendingUploads(ride); // Add to queue if network failed
+                    showNotification('Data saved locally. Will try to send to Google Sheet later.');
+                }
             } else {
                 console.warn('GOOGLE_SCRIPT_URL not configured. Skipping sending data to Google Sheet.');
                 showNotification('Data saved locally. Google Sheet sync not configured.');
@@ -1647,7 +1669,7 @@
                 fareAmount: ride.fare,
                 pickupTimeActual: ride.pickupTime, // Actual pickup time
                 dropoffTimeActual: ride.dropoffTime, // Actual dropoff time
-                timeAddedToApp: ride.addedAt ? new Date(ride.addedAt).toLocaleString() : '' // When the ride was first entered
+                // Removed timeAddedToApp as per your Google Sheet's column structure
             };
 
             try {
@@ -1665,12 +1687,97 @@
 
                 console.log('Request to Google Script sent. Check your spreadsheet for confirmation.');
                 showNotification('☁️ Ride data sent to Google Sheet!');
+                return true; // Indicate that the request was initiated successfully
 
             } catch (error) {
-                console.error('Error sending ride data to Google Sheet:', error);
-                showNotification('❌ Failed to send ride to Google Sheet. Check internet & script URL.');
+                console.error('Network error sending ride data to Google Sheet:', error);
+                // This catch block means a network error occurred preventing the fetch
+                return false; // Indicate that sending failed due to network
+            }
+        }
+
+        // NEW: Function to add a ride to the pending uploads queue
+        function addRideToPendingUploads(ride) {
+            pendingUploads.push(ride);
+            saveData(); // Save the updated pending uploads array
+            console.log(`Ride (ID: ${ride.id}) added to pending uploads queue.`);
+        }
+
+        // NEW: Function to process and send pending uploads
+        async function processPendingUploads() {
+            if (pendingUploads.length === 0) {
+                return; // Nothing to upload
+            }
+
+            if (!navigator.onLine) {
+                console.log('Offline. Cannot process pending uploads.');
+                return; // No internet connection
+            }
+
+            console.log('Attempting to upload pending rides...');
+            showNotification(`🔄 Attempting to sync ${pendingUploads.length} pending rides...`);
+
+            const successfullySentIndexes = [];
+
+            for (let i = 0; i < pendingUploads.length; i++) {
+                const rideToUpload = pendingUploads[i];
+                const sent = await sendRideToGoogleSheet(rideToUpload); 
+                
+                // If the fetch request was successfully initiated, we assume it's sent.
+                // (Due to 'no-cors', we can't confirm server-side processing directly)
+                if (sent) {
+                    successfullySentIndexes.push(i);
+                    console.log(`Ride (ID: ${rideToUpload.id}) attempted upload.`);
+                } else {
+                    console.warn(`Failed to send ride (ID: ${rideToUpload.id}). Will retry later.`);
+                    // This ride remains in pendingUploads for the next attempt
+                }
+            }
+
+            // Remove successfully sent rides from the pendingUploads array.
+            // Iterate backwards to avoid issues with changing array indices.
+            for (let i = successfullySentIndexes.length - 1; i >= 0; i--) {
+                pendingUploads.splice(successfullySentIndexes[i], 1);
+            }
+
+            saveData(); // Save the updated pendingUploads array (with sent rides removed)
+
+            if (successfullySentIndexes.length > 0) {
+                showNotification(`✅ Successfully synced ${successfullySentIndexes.length} ride(s) to Google Sheet.`);
+            } else if (pendingUploads.length > 0) {
+                showNotification('Some pending rides could not be synced. Retrying later.');
             }
         }
     </script>
 </body>
 </html>
+```
+
+Here's a breakdown of the changes and how it works:
+
+**Key Changes in the Code:**
+
+1.  **`pendingUploads` Array:** A new array `pendingUploads` is added to your app's memory to temporarily store rides that couldn't be sent to Google Sheet.
+2.  **`PENDING_UPLOADS_STORAGE_KEY`:** A new key is used to save this `pendingUploads` array to your phone's local storage, so even if you close the app, it remembers which rides still need to be sent.
+3.  **Updated `loadData()` and `saveData()`:** These functions now also load and save the `pendingUploads` array, ensuring that this "waiting room" for data is always up-to-date.
+4.  **Modified `dropoffCustomer()` function:**
+    * When you click "🔵 DROPPED OFF", your app first attempts to send the ride data to your Google Sheet using the `sendRideToGoogleSheet` function.
+    * If `sendRideToGoogleSheet` tells the app that it **couldn't send** the data (usually because there's no internet connection), the ride is immediately added to the `pendingUploads` array.
+    * You'll get a notification like "Data saved locally. Will try to send to Google Sheet later."
+5.  **New `addRideToPendingUploads()` function:** This simple helper adds a ride to the `pendingUploads` array.
+6.  **New `processPendingUploads()` function:** This is like a little watchdog!
+    * It checks if there are any rides waiting in the `pendingUploads` array.
+    * It then checks if your phone currently has an internet connection (`navigator.onLine`).
+    * If it finds both (rides waiting AND internet), it tries to send each waiting ride to your Google Sheet.
+    * If a ride is successfully sent (meaning the request was sent over the network), it removes that ride from the `pendingUploads` queue.
+    * You'll get notifications about the syncing process.
+7.  **`setInterval(processPendingUploads, 10000)`:** This line is added to your `DOMContentLoaded` event, making the `processPendingUploads` function run automatically every 10 seconds (10,000 milliseconds) to check for and send any waiting rides.
+8.  **`sendRideToGoogleSheet` now explicitly returns `true` or `false`** based on whether the network request was successfully initiated, allowing `dropoffCustomer` to decide if it needs to save the ride for later.
+
+**What you need to do next:**
+
+1.  **Update your Google Apps Script (from Part 1 above):** Make sure you've replaced your previous Apps Script code with the new, shorter version I provided in Part 1. This ensures your Google Sheet is ready to receive data in the correct 9-column format. **Then, re-deploy it to get the changes live.**
+2.  **Copy this entire code block from the `locations-app` Canvas above.**
+3.  **Paste this entire code** into your `index.html` file on GitHub, replacing all the previous content.
+
+Once both your Google Apps Script and your `index.html` file are updated and live, try completing a ride both with and without an internet connection on your phone! You should see the different notifications and eventually see the data appear in your Google She
