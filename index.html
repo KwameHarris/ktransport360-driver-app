@@ -578,17 +578,15 @@
                 </div>
 
                 <div class="input-group">
-                    <label for="pickupLocationSelect">Pickup Location</label>
-                    <select id="pickupLocationSelect">
-                        <!-- Options will be populated by JavaScript -->
-                    </select>
+                    <label for="pickupLocationInput">Pickup Location</label>
+                    <!-- Changed from select to input with datalist for custom entries -->
+                    <input type="text" id="pickupLocationInput" list="commonLocationsDatalist" placeholder="Select or type a pickup location">
                 </div>
 
                 <div class="input-group">
-                    <label for="dropoffLocationSelect">Drop-off Location</label>
-                    <select id="dropoffLocationSelect">
-                        <!-- Options will be populated by JavaScript -->
-                    </select>
+                    <label for="dropoffLocationInput">Drop-off Location</label>
+                    <!-- Changed from select to input with datalist for custom entries -->
+                    <input type="text" id="dropoffLocationInput" list="commonLocationsDatalist" placeholder="Select or type a drop-off location">
                 </div>
 
                 <div class="input-group">
@@ -606,6 +604,9 @@
         <div id="notification" class="notification">
             📱 Ride saved!
         </div>
+
+        <!-- This datalist provides autocomplete suggestions for location inputs -->
+        <datalist id="commonLocationsDatalist"></datalist>
 
         <!-- Bottom Navigation -->
         <div class="bottom-nav">
@@ -632,60 +633,23 @@
         // App Data Storage
         let ridesData = [];
 
-        // --- Common Locations: Now directly inside the code! ---
-        let commonLocations = [
-            "Jacksonville International Airport (JAX)",
-            "Downtown Jacksonville",
-            "St. Johns Town Center",
-            "Mayo Clinic Jacksonville",
-            "Naval Air Station Jacksonville (NAS Jax)",
-            "Jacksonville Zoo and Gardens",
-            "TIAA Bank Field (EverBank Stadium)",
-            "Jacksonville Beach",
-            "Ponte Vedra Beach",
-            "St. Augustine Historic District",
-            "Orlando International Airport (MCO)",
-            "Walt Disney World Resort",
-            "Universal Orlando Resort",
-            "Daytona International Speedway",
-            "Gainesville, FL",
-            "Tallahassee, FL",
-            "Atlanta, GA",
-            "Savannah, GA",
-            "Miami International Airport (MIA)",
-            "Orlando Sanford International Airport (SFB)",
-            "Tampa International Airport (TPA)",
-            "Port Canaveral",
-            "Amelia Island",
-            "Palm Coast",
-            "Flagler Beach",
-            "Fernandina Beach",
-            "Orange Park",
-            "Fleming Island",
-            "Middleburg",
-            "Green Cove Springs",
-            "Starke",
-            "Palatka",
-            "Lake City",
-            "Brunswick, GA",
-            "Valdosta, GA"
-        ].sort(); // Sort locations alphabetically right away
+        // Key for storing common locations in localStorage
+        const COMMON_LOCATIONS_STORAGE_KEY = 'ktransport360_common_locations';
 
         // Initialize App
         document.addEventListener('DOMContentLoaded', function() {
             console.log('App starting...');
             
-            // Load data from localStorage
-            loadData();
+            // Load data from localStorage (rides and common locations)
+            loadData(); // Load rides data
+            loadCommonLocationsData(); // Load/initialize common locations from localStorage/defaults
             
-            // Initialize with sample data if empty.
+            // If no rides are loaded from localStorage, initialize with an empty list.
             if (ridesData.length === 0) {
-                initializeSampleData();
+                initializeSampleData(); // This function now ensures ridesData is empty
             }
 
-            // Call loadCommonLocations (it's now synchronous, no .then())
-            loadCommonLocations(); // This function now just uses the internal commonLocations array.
-            console.log('Common locations are ready:', commonLocations.length, 'locations.'); // Confirm they are loaded.
+            populateLocationSelects(); // Populate the datalist with common locations after they are loaded
 
             // Set up dates for display and default form value
             const today = new Date();
@@ -704,51 +668,159 @@
             updateStatusBar(); // Initial status bar update with current time
         });
 
-        // Function to load common locations - now it just uses the internal array
-        // The 'async' keyword and 'fetch' call have been removed.
-        function loadCommonLocations() {
-            // commonLocations array is already defined and sorted above.
-            // This function exists now mostly for consistency and clarity,
-            // but it no longer performs a network request.
-            console.log('Common locations are already loaded directly into the app.');
-            // No error handling needed here for file fetching, as there's no file.
-            // If you wanted to re-enable external fetching later, you'd put the fetch logic back here.
+        // Function to load common locations from localStorage or use defaults
+        function loadCommonLocationsData() {
+            try {
+                const savedLocations = localStorage.getItem(COMMON_LOCATIONS_STORAGE_KEY);
+                if (savedLocations) {
+                    commonLocations = JSON.parse(savedLocations);
+                    console.log('Common locations loaded from localStorage:', commonLocations.length, 'locations.');
+                } else {
+                    // Use the hardcoded list only if nothing is in localStorage
+                    commonLocations = [
+                        "Jacksonville International Airport (JAX)",
+                        "Downtown Jacksonville",
+                        "St. Johns Town Center",
+                        "Mayo Clinic Jacksonville",
+                        "Naval Air Station Jacksonville (NAS Jax)",
+                        "Jacksonville Zoo and Gardens",
+                        "TIAA Bank Field (EverBank Stadium)",
+                        "Jacksonville Beach",
+                        "Ponte Vedra Beach",
+                        "St. Augustine Historic District",
+                        "Orlando International Airport (MCO)",
+                        "Walt Disney World Resort",
+                        "Universal Orlando Resort",
+                        "Daytona International Speedway",
+                        "Gainesville, FL",
+                        "Tallahassee, FL",
+                        "Atlanta, GA",
+                        "Savannah, GA",
+                        "Miami International Airport (MIA)",
+                        "Orlando Sanford International Airport (SFB)",
+                        "Tampa International Airport (TPA)",
+                        "Port Canaveral",
+                        "Amelia Island",
+                        "Palm Coast",
+                        "Flagler Beach",
+                        "Fernandina Beach",
+                        "Orange Park",
+                        "Fleming Island",
+                        "Middleburg",
+                        "Green Cove Springs",
+                        "Starke",
+                        "Palatka",
+                        "Lake City",
+                        "Brunswick, GA",
+                        "Valdosta, GA"
+                    ].sort();
+                    saveCommonLocationsData(); // Save defaults once
+                    console.log('Using default common locations and saving them.');
+                }
+            } catch (error) {
+                console.error('Error loading common locations from localStorage:', error);
+                // Fallback to hardcoded list if there's an error loading from storage
+                // This ensures the app can still function even if storage is corrupted
+                commonLocations = [
+                    "Jacksonville International Airport (JAX)",
+                    "Downtown Jacksonville",
+                    "St. Johns Town Center",
+                    "Mayo Clinic Jacksonville",
+                    "Naval Air Station Jacksonville (NAS Jax)",
+                    "Jacksonville Zoo and Gardens",
+                    "TIAA Bank Field (EverBank Stadium)",
+                    "Jacksonville Beach",
+                    "Ponte Vedra Beach",
+                    "St. Augustine Historic District",
+                    "Orlando International Airport (MCO)",
+                    "Walt Disney World Resort",
+                    "Universal Orlando Resort",
+                    "Daytona International Speedway",
+                    "Gainesville, FL",
+                    "Tallahassee, FL",
+                    "Atlanta, GA",
+                    "Savannah, GA",
+                    "Miami International Airport (MIA)",
+                    "Orlando Sanford International Airport (SFB)",
+                    "Tampa International Airport (TPA)",
+                    "Port Canaveral",
+                    "Amelia Island",
+                    "Palm Coast",
+                    "Flagler Beach",
+                    "Fernandina Beach",
+                    "Orange Park",
+                    "Fleming Island",
+                    "Middleburg",
+                    "Green Cove Springs",
+                    "Starke",
+                    "Palatka",
+                    "Lake City",
+                    "Brunswick, GA",
+                    "Valdosta, GA"
+                ].sort();
+            }
         }
 
-        // Load data from localStorage
+        // Function to save common locations to localStorage
+        function saveCommonLocationsData() {
+            try {
+                localStorage.setItem(COMMON_LOCATIONS_STORAGE_KEY, JSON.stringify(commonLocations));
+                console.log('Common locations saved to localStorage.');
+            } catch (error) {
+                console.error('Error saving common locations to localStorage:', error);
+            }
+        }
+
+        // Load data from localStorage (this handles ridesData)
         function loadData() {
             try {
                 const saved = localStorage.getItem('ktransport360_rides');
                 if (saved) {
                     ridesData = JSON.parse(saved);
-                    console.log('Data loaded:', ridesData.length, 'rides');
+                    console.log('Rides data loaded:', ridesData.length, 'rides');
                 } else {
                     ridesData = [];
                 }
             } catch (error) {
-                console.error('Error loading data from localStorage:', error);
+                console.error('Error loading rides data from localStorage:', error);
                 ridesData = []; // Reset if error occurs to prevent further issues
             }
         }
 
-        // Initialize with sample data
+        // Initialize with sample data (clears current rides if none are loaded)
         function initializeSampleData() {
-            // No hardcoded sample data here.
-            // The app will now start with an empty ride list,
-            // relying on the user to add new rides.
-            ridesData = []; 
+            ridesData = []; // Ensures the app starts with an empty ride list if no data is found
             saveData(); // Save the empty state immediately
             console.log('Sample data initialization complete: No initial rides.');
         }
 
-        // Save data to localStorage
+        // Save rides data to localStorage
         function saveData() {
             try {
                 localStorage.setItem('ktransport360_rides', JSON.stringify(ridesData));
-                console.log('Data saved successfully to localStorage.');
+                console.log('Rides data saved successfully to localStorage.');
             } catch (error) {
-                console.error('Error saving data to localStorage:', error);
-                // Potentially show a user message here if saving fails consistently
+                console.error('Error saving rides data to localStorage:', error);
+            }
+        }
+
+        // Helper function to add a location to commonLocations if it's new
+        function addLocationIfNew(locationName) {
+            if (!locationName || typeof locationName !== 'string' || locationName.trim() === "") {
+                return; // Don't add empty or invalid strings
+            }
+
+            const normalizedName = locationName.trim();
+            // Check if the location already exists (case-insensitive)
+            const exists = commonLocations.some(loc => loc.toLowerCase() === normalizedName.toLowerCase());
+
+            if (!exists) {
+                commonLocations.push(normalizedName);
+                commonLocations.sort(); // Keep the list sorted alphabetically
+                saveCommonLocationsData(); // Persist the updated list
+                console.log(`Added new location: "${normalizedName}" to common locations.`);
+                showNotification(`➕ Added "${normalizedName}" to common locations!`);
+                populateLocationSelects(); // Re-populate datalist with new option
             }
         }
 
@@ -1087,30 +1159,21 @@
             document.getElementById('addRideModal').style.display = 'block';
         }
 
-        // Function to populate the location dropdowns
+        // Function to populate the location dropdowns (now a datalist)
         function populateLocationSelects() {
-            const pickupSelect = document.getElementById('pickupLocationSelect');
-            const dropoffSelect = document.getElementById('dropoffLocationSelect');
-
+            const datalist = document.getElementById('commonLocationsDatalist');
             // Clear previous options
-            pickupSelect.innerHTML = '<option value="" disabled selected>Select a Pickup Location</option>';
-            dropoffSelect.innerHTML = '<option value="" disabled selected>Select a Drop-off Location</option>';
+            datalist.innerHTML = ''; 
 
-            // Add common locations to both dropdowns ONLY if commonLocations has data
+            // Add common locations to the datalist
             if (commonLocations && commonLocations.length > 0) {
                 commonLocations.forEach(location => {
-                    const pickupOption = document.createElement('option');
-                    pickupOption.value = location;
-                    pickupOption.textContent = location;
-                    pickupSelect.appendChild(pickupOption);
-
-                    const dropoffOption = document.createElement('option');
-                    dropoffOption.value = location;
-                    dropoffOption.textContent = location;
-                    dropoffSelect.appendChild(dropoffOption);
+                    const option = document.createElement('option');
+                    option.value = location;
+                    datalist.appendChild(option);
                 });
             } else {
-                console.warn('Common locations list is empty. Dropdowns will only show default option.');
+                console.warn('Common locations list is empty. Datalist will not have suggestions.');
             }
         }
 
@@ -1127,15 +1190,23 @@
             const phone = document.getElementById('customerPhone').value.trim();
             const date = document.getElementById('pickupDate').value;
             const time = document.getElementById('pickupTime').value;
-            // Get selected values from the dropdowns
-            const pickup = document.getElementById('pickupLocationSelect').value.trim();
-            const dropoff = document.getElementById('dropoffLocationSelect').value.trim();
+            // Get values from the new input fields linked to the datalist
+            const pickup = document.getElementById('pickupLocationInput').value.trim();
+            const dropoff = document.getElementById('dropoffLocationInput').value.trim();
             const fare = document.getElementById('fareAmount').value.trim();
 
-            // Basic validation: Check if dropdowns have a selected value (not the default disabled option)
-            if (!name || !phone || !date || !time || !pickup || !dropoff || pickup === "" || dropoff === "") {
-                showNotification('❌ Please fill in all required fields, including selecting locations!'); // Updated notification
+            // Basic validation
+            if (!name || !phone || !date || !time || !pickup || !dropoff) {
+                showNotification('❌ Please fill in all required fields, including locations!'); 
                 return;
+            }
+
+            // Automatically add new locations to the common list if they are not already there
+            if (pickup) {
+                addLocationIfNew(pickup);
+            }
+            if (dropoff) {
+                addLocationIfNew(dropoff);
             }
 
             // Format fare to ensure it has a $ sign and is a valid number (e.g., "$45.00")
@@ -1337,6 +1408,7 @@
         // Auto-save data to localStorage every 30 seconds
         setInterval(() => {
             saveData();
+            saveCommonLocationsData(); // Also auto-save common locations
             console.log('Auto-saved data to localStorage.');
         }, 30000);
 
@@ -1365,4 +1437,3 @@
     </script>
 </body>
 </html>
-
