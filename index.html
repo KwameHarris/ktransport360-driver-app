@@ -232,7 +232,7 @@
             color: white;
         }
 
-        .status-picked {
+        .status-picked-up { /* Corrected class name */
             background: linear-gradient(135deg, #27ae60, #229954); /* Green */
             color: white;
         }
@@ -632,10 +632,44 @@
         // App Data Storage
         let ridesData = [];
 
-        // --- commonLocations will be loaded from a separate file (locations.json) ---
-        // In the Canvas preview, 'fetch' cannot access 'locations.json' as it's a separate file,
-        // so you will see an error in the console. However, this setup IS correct for GoDaddy.
-        let commonLocations = []; 
+        // --- Common Locations: Now directly inside the code! ---
+        let commonLocations = [
+            "Jacksonville International Airport (JAX)",
+            "Downtown Jacksonville",
+            "St. Johns Town Center",
+            "Mayo Clinic Jacksonville",
+            "Naval Air Station Jacksonville (NAS Jax)",
+            "Jacksonville Zoo and Gardens",
+            "TIAA Bank Field (EverBank Stadium)",
+            "Jacksonville Beach",
+            "Ponte Vedra Beach",
+            "St. Augustine Historic District",
+            "Orlando International Airport (MCO)",
+            "Walt Disney World Resort",
+            "Universal Orlando Resort",
+            "Daytona International Speedway",
+            "Gainesville, FL",
+            "Tallahassee, FL",
+            "Atlanta, GA",
+            "Savannah, GA",
+            "Miami International Airport (MIA)",
+            "Orlando Sanford International Airport (SFB)",
+            "Tampa International Airport (TPA)",
+            "Port Canaveral",
+            "Amelia Island",
+            "Palm Coast",
+            "Flagler Beach",
+            "Fernandina Beach",
+            "Orange Park",
+            "Fleming Island",
+            "Middleburg",
+            "Green Cove Springs",
+            "Starke",
+            "Palatka",
+            "Lake City",
+            "Brunswick, GA",
+            "Valdosta, GA"
+        ].sort(); // Sort locations alphabetically right away
 
         // Initialize App
         document.addEventListener('DOMContentLoaded', function() {
@@ -649,50 +683,36 @@
                 initializeSampleData();
             }
 
-            // Load common locations asynchronously
-            // This function will attempt to fetch locations.json
-            loadCommonLocations().then(() => {
-                // Once locations are loaded (or if fetch failed), proceed with initialization
-                // Set up dates for display and default form value
-                const today = new Date();
-                const tomorrow = new Date(today);
-                tomorrow.setDate(tomorrow.getDate() + 1);
-                
-                document.getElementById('todaysDate').textContent = today.toLocaleDateString();
-                document.getElementById('tomorrowsDate').textContent = tomorrow.toLocaleDateString();
-                document.getElementById('pickupDate').value = today.toISOString().split('T')[0]; // Default new ride date to today
-                
-                // Initialize display
-                updateStats();
-                showHome(); // This will activate the home screen and initial stats display
-                
-                console.log('App initialized successfully');
-                updateStatusBar(); // Initial status bar update with current time
-            });
+            // Call loadCommonLocations (it's now synchronous, no .then())
+            loadCommonLocations(); // This function now just uses the internal commonLocations array.
+            console.log('Common locations are ready:', commonLocations.length, 'locations.'); // Confirm they are loaded.
+
+            // Set up dates for display and default form value
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            document.getElementById('todaysDate').textContent = today.toLocaleDateString();
+            document.getElementById('tomorrowsDate').textContent = tomorrow.toLocaleDateString();
+            document.getElementById('pickupDate').value = today.toISOString().split('T')[0]; // Default new ride date to today
+            
+            // Initialize display
+            updateStats();
+            showHome(); // This will activate the home screen and initial stats display
+            
+            console.log('App initialized successfully');
+            updateStatusBar(); // Initial status bar update with current time
         });
 
-        // Function to load common locations from JSON file
-        async function loadCommonLocations() {
-            console.log('Attempting to load common locations from locations.json...');
-            try {
-                // Assuming locations.json is in the same directory as ktransport360_driver.html
-                const response = await fetch('locations.json');
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                if (Array.isArray(data)) {
-                    commonLocations = data.sort(); // Sort locations alphabetically
-                    console.log('Common locations loaded from locations.json:', commonLocations.length, 'locations.');
-                } else {
-                    console.error('locations.json did not return an array. Using empty list.');
-                    commonLocations = [];
-                }
-            } catch (error) {
-                console.error('Error loading common locations:', error);
-                showNotification('❌ Could not load common locations. Please ensure locations.json is correctly uploaded alongside the app.');
-                commonLocations = []; // Fallback to empty array if fetch fails or data is bad
-            }
+        // Function to load common locations - now it just uses the internal array
+        // The 'async' keyword and 'fetch' call have been removed.
+        function loadCommonLocations() {
+            // commonLocations array is already defined and sorted above.
+            // This function exists now mostly for consistency and clarity,
+            // but it no longer performs a network request.
+            console.log('Common locations are already loaded directly into the app.');
+            // No error handling needed here for file fetching, as there's no file.
+            // If you wanted to re-enable external fetching later, you'd put the fetch logic back here.
         }
 
         // Load data from localStorage
@@ -1345,3 +1365,4 @@
     </script>
 </body>
 </html>
+
