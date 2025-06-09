@@ -608,6 +608,7 @@
 
                 <div class="input-group">
                     <label for="fareAmount">Fare Amount</label>
+                    <!-- Added id to make it easier to target for JavaScript -->
                     <input type="text" id="fareAmount" placeholder="$45.00">
                 </div>
 
@@ -683,6 +684,28 @@
             
             console.log('App initialized successfully');
             updateStatusBar(); // Initial status bar update with current time
+
+            // --- New: Add event listener for Fare Amount formatting ---
+            const fareAmountInput = document.getElementById('fareAmount');
+            if (fareAmountInput) {
+                fareAmountInput.addEventListener('blur', function() {
+                    let value = this.value.trim();
+                    // Remove any non-numeric characters except a single decimal point
+                    value = value.replace(/[^0-9.]/g, ''); 
+                    
+                    const fareNum = parseFloat(value);
+                    if (!isNaN(fareNum)) {
+                        this.value = `$${fareNum.toFixed(2)}`;
+                    } else if (value !== '') { // If it's not a number but something was typed
+                        this.value = '$0.00'; // Default to 0 if invalid
+                        showNotification('Invalid fare amount entered. Set to $0.00.');
+                    } else {
+                        this.value = ''; // Keep empty if no input
+                    }
+                });
+            } else {
+                console.warn('Fare amount input element not found.');
+            }
         });
 
         // Function to load common locations from localStorage or use defaults
