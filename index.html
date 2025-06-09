@@ -685,22 +685,50 @@
             console.log('App initialized successfully');
             updateStatusBar(); // Initial status bar update with current time
 
-            // --- New: Add event listener for Fare Amount formatting ---
             const fareAmountInput = document.getElementById('fareAmount');
             if (fareAmountInput) {
-                fareAmountInput.addEventListener('blur', function() {
+                // Event listener for live formatting as the user types
+                fareAmountInput.addEventListener('input', function() {
                     let value = this.value.trim();
-                    // Remove any non-numeric characters except a single decimal point
-                    value = value.replace(/[^0-9.]/g, ''); 
+                    // Remove non-numeric characters, but allow one dot
+                    value = value.replace(/[^\d.]/g, '');
+
+                    // Handle decimal point correctly
+                    const parts = value.split('.');
+                    if (parts.length > 2) { // More than one decimal point
+                        value = parts[0] + '.' + parts.slice(1).join('');
+                    }
+
+                    if (value === '') {
+                        this.value = ''; // Keep empty if input is cleared
+                        return;
+                    }
+
+                    if (value.startsWith('.')) { // User types .5
+                        value = '0' + value;
+                    }
+
+                    // Prepend $ for display
+                    if (!value.startsWith('$')) { // Only add $ if not already there
+                         this.value = '$' + value;
+                    } else {
+                         this.value = value;
+                    }
+                });
+
+                // Event listener for final formatting when the input loses focus
+                fareAmountInput.addEventListener('blur', function() {
+                    console.log('FareAmount blur event triggered. Current value before final format:', this.value);
+                    let value = this.value.trim();
+                    // Remove $ and any non-numeric characters except a single decimal point
+                    value = value.replace(/[^\d.]/g, ''); 
                     
                     const fareNum = parseFloat(value);
                     if (!isNaN(fareNum)) {
                         this.value = `$${fareNum.toFixed(2)}`;
-                    } else if (value !== '') { // If it's not a number but something was typed
-                        this.value = '$0.00'; // Default to 0 if invalid
+                    } else { // If not a number, or empty after stripping
+                        this.value = '$0.00'; // Default to $0.00
                         showNotification('Invalid fare amount entered. Set to $0.00.');
-                    } else {
-                        this.value = ''; // Keep empty if no input
                     }
                 });
             } else {
@@ -821,7 +849,8 @@
                 } else {
                     ridesData = [];
                 }
-            } catch (error) {
+            }
+            catch (error) {
                 console.error('Error loading rides data from localStorage:', error);
                 ridesData = []; // Reset if error occurs to prevent further issues
             }
@@ -839,7 +868,8 @@
             try {
                 localStorage.setItem('ktransport360_rides', JSON.stringify(ridesData));
                 console.log('Rides data saved successfully to localStorage.');
-            } catch (error) {
+            }
+            catch (error) {
                 console.error('Error saving rides data to localStorage:', error);
             }
         }
