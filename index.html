@@ -444,6 +444,14 @@
             box-shadow: 0 0 10px rgba(52, 152, 219, 0.2);
         }
 
+        /* NEW: Style for highlighting missing fields */
+        .input-group input.missing-field,
+        .input-group select.missing-field {
+            border-color: #e74c3c !important; /* Red border */
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.4) !important; /* Red glow */
+            background: #fffafa !important; /* Very light red background */
+        }
+
         /* Stats Grid */
         .stats-grid {
             display: grid;
@@ -1016,13 +1024,15 @@
         // Display today's rides in their dedicated section
         function displayTodaysRides() {
             console.log('Rendering today\'s rides.');
-            const today = new Date().toISOString().split('T')[0];
+            const today = new Date();
+            const todaysDateString = today.toISOString().split('T')[0];
+            const nowTime = now.getHours() * 60 + now.getMinutes(); // Current time in minutes from midnight
+
             const todaysRides = ridesData
-                                .filter(ride => ride.date === today)
+                                .filter(ride => ride.date === todaysDateString)
                                 .sort((a, b) => { // Sort by scheduledTime
-                                    // Using a dummy date to compare times correctly
-                                    const timeA = new Date(`1970/01/01 ${a.scheduledTime}`);
-                                    const timeB = new Date(`1970/01/01 ${b.scheduledTime}`);
+                                    const timeA = new Date(`1970/01/01 ${a.scheduledTime}`).getTime();
+                                    const timeB = new Date(`1970/01/01 ${b.scheduledTime}`).getTime();
                                     return timeA - timeB;
                                 });
 
@@ -1042,8 +1052,21 @@
                 return;
             }
 
-            container.innerHTML = todaysRides.map(ride => createRideCard(ride)).join('');
+            // Check for missed rides and apply highlighting
+            container.innerHTML = todaysRides.map(ride => {
+                let isMissed = false;
+                if (ride.status === 'scheduled') {
+                    const rideDateTime = new Date(`${ride.date}T${ride.scheduledTime}`);
+                    // Only mark as missed if the ride date is today AND the scheduled time is in the past
+                    // OR if the ride date is before today
+                    if (rideDateTime.getTime() < new Date().getTime()) {
+                        isMissed = true;
+                    }
+                }
+                return createRideCard(ride, isMissed); // Pass isMissed status to createRideCard
+            }).join('');
         }
+
 
         // Display tomorrow's rides in their dedicated section
         function displayTomorrowsRides() {
@@ -1054,8 +1077,8 @@
             const tomorrowsRides = ridesData
                                     .filter(ride => ride.date === tomorrowDate)
                                     .sort((a, b) => { // Sort by scheduledTime
-                                        const timeA = new Date(`1970/01/01 ${a.scheduledTime}`);
-                                        const timeB = new Date(`1970/01/01 ${b.scheduledTime}`);
+                                        const timeA = new Date(`1970/01/01 ${a.scheduledTime}`).getTime();
+                                        const timeB = new Date(`1970/01/01 ${b.scheduledTime}`).getTime();
                                         return timeA - timeB;
                                     });
 
@@ -1075,7 +1098,7 @@
                 return;
             }
 
-            container.innerHTML = tomorrowsRides.map(ride => createRideCard(ride)).join('');
+            container.innerHTML = tomorrowsRides.map(ride => createRideCard(ride, false)).join(''); // No missed rides for tomorrow
         }
 
         // Display future rides (beyond tomorrow)
@@ -1095,8 +1118,8 @@
                                     if (dateA.getTime() !== dateB.getTime()) {
                                         return dateA - dateB;
                                     }
-                                    const timeA = new Date(`1970/01/01 ${a.scheduledTime}`);
-                                    const timeB = new Date(`1970/01/01 ${b.scheduledTime}`);
+                                    const timeA = new Date(`1970/01/01 ${a.scheduledTime}`).getTime();
+                                    const timeB = new Date(`1970/01/01 ${b.scheduledTime}`).getTime();
                                     return timeA - timeB;
                                 });
 
@@ -1116,14 +1139,26 @@
                 return;
             }
 
-            container.innerHTML = futureRides.map(ride => createRideCard(ride)).join('');
+            container.innerHTML = futureRides.map(ride => createRideCard(ride, false)).join(''); // No missed rides for future
         }
 
 
         // Generates the HTML string for a single ride card
-        function createRideCard(ride) {
+        function createRideCard(ride, isMissed = false) {
             const statusClass = ride.status.replace('-', ''); // Converts 'picked-up' to 'pickedup' for CSS class
             let actionButtons = '';
+            let missedTag = '';
+            let cardClasses = `${ride.status === 'picked-up' ? 'active-ride' : ''} ${ride.status === 'completed' ? 'completed' : ''}`;
+
+            // Add 'missed-ride' class if it's a missed ride
+            if (isMissed) {
+                cardClasses += ' missed-ride';
+                missedTag = `
+                    <div style="text-align: center; color: #e74c3c; font-weight: bold; font-size: 1.1em; padding-bottom: 10px;">
+                        🚨 ACTION REQUIRED: RIDE MISSED!
+                    </div>
+                `;
+            }
 
             // Buttons only appear if the ride is for today or tomorrow and not completed
             const rideDate = new Date(ride.date).toISOString().split('T')[0];
@@ -1132,7 +1167,7 @@
             tomorrow.setDate(tomorrow.getDate() + 1);
             const tomorrowDate = tomorrow.toISOString().split('T')[0];
 
-            if ((rideDate === today || rideDate === tomorrowDate) && ride.status === 'scheduled') {
+            if ((rideDate === today || rideDate === tomorrowDate) && ride.status === 'scheduled' && !isMissed) { // Don't show buttons if missed
                 actionButtons = `
                     <button class="btn-pickup" onclick="pickupCustomer(${ride.id})">
                         🟢 PICKED UP
@@ -1150,7 +1185,7 @@
                         ✅ RIDE COMPLETED
                     </div>
                 `;
-            } else { // For future scheduled rides, no buttons
+            } else { // For future scheduled rides, or if it's missed, no action buttons
                 actionButtons = `
                     <div style="text-align: center; color: #3498db; font-weight: bold; font-size: 1.2em; padding: 20px;">
                         📅 SCHEDULED FOR ${new Date(ride.date).toLocaleDateString()}
@@ -1160,7 +1195,8 @@
 
 
             return `
-                <div class="customer-card ${ride.status === 'picked-up' ? 'active-ride' : ''} ${ride.status === 'completed' ? 'completed' : ''}">
+                <div class="customer-card ${cardClasses}">
+                    ${missedTag}
                     <div class="customer-info">
                         <div class="customer-name">${ride.name}</div>
                         <div class="customer-details">📞 ${ride.phone}</div>
@@ -1254,6 +1290,11 @@
             document.getElementById('pickupTime').value = '';
             document.getElementById('fareAmount').value = '';
 
+            // Clear any previous highlighting
+            document.querySelectorAll('.missing-field').forEach(el => {
+                el.classList.remove('missing-field');
+            });
+
             // Populate the dropdowns with common locations
             populateLocationSelects();
 
@@ -1287,19 +1328,62 @@
         // Save a new ride entry from the modal form
         function saveNewRide() {
             console.log('Attempting to save new ride.');
-            const name = document.getElementById('customerName').value.trim();
-            const phone = document.getElementById('customerPhone').value.trim();
-            const date = document.getElementById('pickupDate').value;
-            const time = document.getElementById('pickupTime').value;
-            // Get values from the new input fields linked to the datalist
-            const pickup = document.getElementById('pickupLocationInput').value.trim();
-            const dropoff = document.getElementById('dropoffLocationInput').value.trim();
-            const fare = document.getElementById('fareAmount').value.trim();
+            // Get references to input elements
+            const customerNameInput = document.getElementById('customerName');
+            const customerPhoneInput = document.getElementById('customerPhone');
+            const pickupDateInput = document.getElementById('pickupDate');
+            const pickupTimeInput = document.getElementById('pickupTime');
+            const pickupLocationInput = document.getElementById('pickupLocationInput');
+            const dropoffLocationInput = document.getElementById('dropoffLocationInput');
+            const fareAmountInput = document.getElementById('fareAmount');
 
-            // Basic validation
-            if (!name || !phone || !date || !time || !pickup || !dropoff) {
-                showNotification('❌ Please fill in all required fields, including locations!'); 
-                return;
+            // Get trimmed values
+            const name = customerNameInput.value.trim();
+            const phone = customerPhoneInput.value.trim();
+            const date = pickupDateInput.value;
+            const time = pickupTimeInput.value;
+            const pickup = pickupLocationInput.value.trim();
+            const dropoff = dropoffLocationInput.value.trim();
+            const fare = fareAmountInput.value.trim();
+
+            let missingFields = false; // Flag to track if any fields are missing
+
+            // Clear previous highlighting
+            document.querySelectorAll('.missing-field').forEach(el => {
+                el.classList.remove('missing-field');
+            });
+
+            // Basic validation and highlighting
+            if (!name) {
+                customerNameInput.classList.add('missing-field');
+                missingFields = true;
+            }
+            if (!phone) {
+                customerPhoneInput.classList.add('missing-field');
+                missingFields = true;
+            }
+            if (!date) {
+                pickupDateInput.classList.add('missing-field');
+                missingFields = true;
+            }
+            if (!time) {
+                pickupTimeInput.classList.add('missing-field');
+                missingFields = true;
+            }
+            if (!pickup) {
+                pickupLocationInput.classList.add('missing-field');
+                missingFields = true;
+            }
+            if (!dropoff) {
+                dropoffLocationInput.classList.add('missing-field');
+                missingFields = true;
+            }
+            // Fare is optional, but if it's there, we might want to validate its format before saving
+            // For now, we'll let the blur event handle its formatting. If it's empty, it defaults to $0.00 in newRide object.
+
+            if (missingFields) {
+                showNotification('❌ Please fill in all highlighted fields!'); 
+                return; // Stop the function if fields are missing
             }
 
             // Automatically add new locations to the common list if they are not already there
