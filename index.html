@@ -644,7 +644,7 @@
         <!-- This datalist provides autocomplete suggestions for location inputs -->
         <datalist id="commonLocationsDatalist"></datalist>
 
-        <!-- NEW: Hidden iframe for Google Apps Script communication -->
+        <!-- NEW: Hidden iframe for Google Apps Script communication (remove this line if you decide to completely remove GS integration) -->
         <iframe id="google-script-iframe" style="display:none;"></iframe>
 
         <!-- Bottom Navigation -->
@@ -671,24 +671,23 @@
 
         // App Data Storage
         let ridesData = [];
-        // NEW: Array to hold rides that couldn't be sent to Google Sheet immediately
-        let pendingUploads = [];
+        // Removed pendingUploads array as we're no longer integrating with Google Sheet directly
+        // let pendingUploads = []; // REMOVED
 
         // Key for storing common locations in localStorage
         const COMMON_LOCATIONS_STORAGE_KEY = 'ktransport360_common_locations';
-        // NEW: Key for storing pending uploads in localStorage
-        const PENDING_UPLOADS_STORAGE_KEY = 'ktransport360_pending_uploads';
+        // Removed PENDING_UPLOADS_STORAGE_KEY as we're no longer integrating with Google Sheet directly
+        // const PENDING_UPLOADS_STORAGE_KEY = 'ktransport360_pending_uploads'; // REMOVED
 
-        // NEW: This is the URL for your Google Apps Script Web App (from Part 1, Step 5)
-        // You MUST replace 'YOUR_COPIED_WEB_APP_URL_HERE' with the actual URL you got!
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKB2zcg15l2_oogrDt7in6cQD47k6PEkWGZ2g_1MpsOhNrcMCQl0v_C01fwY5kBv7u/exec'; 
+        // Removed GOOGLE_SCRIPT_URL as we're no longer integrating with Google Sheet directly
+        // const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzKB2zcg15l2_oogrDt7in6cQD47k6PEkWGZ2g_1MpsOhNrcMCQl0v_C01fwY5kBv7u/exec'; // REMOVED
 
         // Initialize App
         document.addEventListener('DOMContentLoaded', function() {
             console.log('App starting...');
             
             // Load data from localStorage (rides and common locations)
-            loadData(); // Load rides data and pending uploads
+            loadData(); // Load rides data (pending uploads are no longer loaded)
             loadCommonLocationsData(); // Load/initialize common locations from localStorage/defaults
             
             // If no rides are loaded from localStorage, initialize with an empty list.
@@ -792,8 +791,8 @@
                 console.warn('Customer phone input element not found.');
             }
 
-            // NEW: Set up interval to process pending uploads every 10 seconds
-            setInterval(processPendingUploads, 10000); 
+            // Removed pending uploads interval as we're no longer integrating with Google Sheet directly
+            // setInterval(processPendingUploads, 10000); // REMOVED
         });
 
         // Function to load common locations from localStorage or use defaults
@@ -899,7 +898,7 @@
             }
         }
 
-        // Load data from localStorage (this handles ridesData and pendingUploads)
+        // Load data from localStorage (this handles ridesData)
         function loadData() {
             try {
                 const savedRides = localStorage.getItem('ktransport360_rides');
@@ -909,20 +908,14 @@
                 } else {
                     ridesData = [];
                 }
-
-                const savedPending = localStorage.getItem(PENDING_UPLOADS_STORAGE_KEY);
-                if (savedPending) {
-                    pendingUploads = JSON.parse(savedPending);
-                    console.log('Pending uploads loaded:', pendingUploads.length, 'rides');
-                } else {
-                    pendingUploads = [];
-                }
-
+                // Removed pendingUploads loading as we're no longer integrating with Google Sheet directly
+                // const savedPending = localStorage.getItem(PENDING_UPLOADS_STORAGE_KEY); // REMOVED
+                // if (savedPending) { pendingUploads = JSON.parse(savedPending); } // REMOVED
             }
             catch (error) {
                 console.error('Error loading data from localStorage:', error);
                 ridesData = []; // Reset if error occurs to prevent further issues
-                pendingUploads = [];
+                // pendingUploads = []; // REMOVED
             }
         }
 
@@ -933,12 +926,13 @@
             console.log('Sample data initialization complete: No initial rides.');
         }
 
-        // Save rides data and pending uploads to localStorage
+        // Save rides data and common locations to localStorage
         function saveData() {
             try {
                 localStorage.setItem('ktransport360_rides', JSON.stringify(ridesData));
-                localStorage.setItem(PENDING_UPLOADS_STORAGE_KEY, JSON.stringify(pendingUploads)); // Save pending uploads
-                console.log('App data (rides and pending uploads) saved successfully to localStorage.');
+                // Removed pendingUploads saving as we're no longer integrating with Google Sheet directly
+                // localStorage.setItem(PENDING_UPLOADS_STORAGE_KEY, JSON.stringify(pendingUploads)); // REMOVED
+                console.log('App data (rides) saved successfully to localStorage.'); // Updated log
             }
             catch (error) {
                 console.error('Error saving app data to localStorage:', error);
@@ -1275,7 +1269,7 @@
         }
 
         // Handle customer drop-off action
-        async function dropoffCustomer(rideId) { // Changed to async to await Google Sheet send
+        async function dropoffCustomer(rideId) { 
             console.log('Attempting drop-off for ride ID:', rideId);
             const ride = ridesData.find(r => r.id === rideId);
             if (!ride) {
@@ -1292,19 +1286,10 @@
             
             saveData(); // Save changes to localStorage
 
-            // --- NEW: Try to send completed ride data to Google Sheet ---
-            // Only attempt if the URL is configured
-            if (GOOGLE_SCRIPT_URL && GOOGLE_SCRIPT_URL !== 'YOUR_COPIED_WEB_APP_URL_HERE') {
-                const sentSuccessfully = await sendRideToGoogleSheet(ride);
-                if (!sentSuccessfully) {
-                    addRideToPendingUploads(ride); // Add to queue if network failed
-                    showNotification('Data saved locally. Will try to send to Google Sheet later.');
-                }
-            } else {
-                console.warn('GOOGLE_SCRIPT_URL not configured. Skipping sending data to Google Sheet.');
-                showNotification('Data saved locally. Google Sheet sync not configured.');
-            }
-            // --- END NEW ---
+            // Removed Google Sheet integration code from here
+            // const sentSuccessfully = await sendRideToGoogleSheet(ride); // REMOVED
+            // if (!sentSuccessfully) { addRideToPendingUploads(ride); } // REMOVED
+            // ... etc. ... // REMOVED
             
             // Re-render the current active screen to reflect the status change
             if (document.getElementById('todaysScreen').classList.contains('active')) {
@@ -1659,120 +1644,23 @@
             return false; // Suppress default browser error reporting
         };
 
-        // Function to send completed ride data to Google Sheet using a hidden iframe/form
+        // This function is no longer called by the app, but remains for reference
+        // if you ever re-enable Google Sheet integration.
         async function sendRideToGoogleSheet(ride) {
-            console.log('Attempting to send ride data to Google Sheet via hidden form:', ride);
-
-            // This is the URL for your Google Apps Script Web App
-            const scriptUrl = GOOGLE_SCRIPT_URL; 
-
-            // Create a hidden iframe to receive the response
-            let iframe = document.getElementById('google-script-iframe');
-            if (!iframe) {
-                iframe = document.createElement('iframe');
-                iframe.style.display = 'none'; // Keep it invisible
-                iframe.id = 'google-script-iframe';
-                document.body.appendChild(iframe);
-            }
-
-            // Create a hidden form
-            const form = document.createElement('form');
-            form.target = iframe.id; // Target the hidden iframe
-            form.action = scriptUrl;
-            form.method = 'POST';
-            form.style.display = 'none'; // Keep it invisible
-
-            // Add all the ride data as hidden input fields
-            function addHiddenField(name, value) {
-                const input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = name;
-                input.value = value;
-                form.appendChild(input);
-            }
-
-            addHiddenField('type', 'completed_ride'); // Telling our script what kind of data it is
-            addHiddenField('customerName', ride.name);
-            addHiddenField('customerPhone', ride.phone);
-            addHiddenField('pickupLocation', ride.pickupLocation);
-            addHiddenField('dropoffLocation', ride.dropoffLocation);
-            addHiddenField('scheduledTime', ride.scheduledTime);
-            addHiddenField('pickupTimeActual', ride.pickupTime); // Actual pickup time
-            addHiddenField('dropoffTimeActual', ride.dropoffTime); // Actual dropoff time
-            addHiddenField('fareAmount', ride.fare);
-
-            document.body.appendChild(form); // Add the form to the body
-
-            // Submit the form
-            try {
-                form.submit();
-                console.log('Hidden form submitted to Google Script.');
-                showNotification('☁️ Ride data sent to Google Sheet (via form)!');
-                return true; // Indicate that the form was submitted
-            } catch (error) {
-                console.error('Error submitting hidden form to Google Script:', error);
-                showNotification('❌ Failed to send ride to Google Sheet (form error).');
-                return false; // Indicate submission failed
-            } finally {
-                // Clean up the form after a short delay
-                setTimeout(() => {
-                    if (form.parentNode) {
-                        form.parentNode.removeChild(form);
-                    }
-                }, 1000); 
-            }
+            console.log('Google Sheet integration is currently disabled in the app. This function is not being called.');
+            return false; // Always return false as it's disabled
         }
 
-        // NEW: Function to add a ride to the pending uploads queue
+        // This function is no longer called by the app, but remains for reference
+        // if you ever re-enable Google Sheet integration.
         function addRideToPendingUploads(ride) {
-            pendingUploads.push(ride);
-            saveData(); // Save the updated pending uploads array
-            console.log(`Ride (ID: ${ride.id}) added to pending uploads queue.`);
+            console.log('Google Sheet integration is currently disabled. Ride not added to pending uploads.');
         }
 
-        // NEW: Function to process and send pending uploads
+        // This function is no longer called by the app, but remains for reference
+        // if you ever re-enable Google Sheet integration.
         async function processPendingUploads() {
-            if (pendingUploads.length === 0) {
-                return; // Nothing to upload
-            }
-
-            if (!navigator.onLine) {
-                console.log('Offline. Cannot process pending uploads.');
-                return; // No internet connection
-            }
-
-            console.log('Attempting to upload pending rides...');
-            showNotification(`🔄 Attempting to sync ${pendingUploads.length} pending rides...`);
-
-            const successfullySentIndexes = [];
-
-            for (let i = 0; i < pendingUploads.length; i++) {
-                const rideToUpload = pendingUploads[i];
-                const sent = await sendRideToGoogleSheet(rideToUpload); 
-                
-                // If the form was submitted successfully (even if Google script response isn't checked due to no-cors)
-                if (sent) {
-                    successfullySentIndexes.push(i);
-                    console.log(`Ride (ID: ${rideToUpload.id}) attempted upload.`);
-                } else {
-                    console.warn(`Failed to send ride (ID: ${rideToUpload.id}). Will retry later.`);
-                    // This ride remains in pendingUploads for the next attempt
-                }
-            }
-
-            // Remove successfully sent rides from the pendingUploads array.
-            // Iterate backwards to avoid issues with changing array indices.
-            for (let i = successfullySentIndexes.length - 1; i >= 0; i--) {
-                pendingUploads.splice(successfullySentIndexes[i], 1);
-            }
-
-            saveData(); // Save the updated pendingUploads array (with sent rides removed)
-
-            if (successfullySentIndexes.length > 0) {
-                showNotification(`✅ Successfully synced ${successfullySentIndexes.length} ride(s) to Google Sheet.`);
-            } else if (pendingUploads.length > 0) {
-                showNotification('Some pending rides could not be synced. Retrying later.');
-            }
+            console.log('Google Sheet integration is currently disabled. Not processing pending uploads.');
         }
 
         // Function to clear all completed rides from local storage
@@ -1797,3 +1685,62 @@
     </script>
 </body>
 </html>
+```
+
+---
+
+### **Step 2: Revert Your Google Apps Script to a Basic, Empty Function**
+
+This is important so that your Google Script doesn't try to process anything or return confusing error messages if it accidentally receives an old request.
+
+**Step 1: Open Your Google Sheet and Apps Script.**
+* Go to your Google Sheet.
+* Click on `Extensions` > `Apps Script`.
+
+**Step 2: Copy and Paste this Simple Script.**
+* In the Apps Script code area, **carefully delete all of the existing code.**
+* Now, copy **all** of the code below, and paste it into that empty box:
+
+    ```javascript
+    // This is a simple placeholder script.
+    // It will log any incoming POST requests but will not process them.
+    // This is to ensure it doesn't cause errors if old app versions try to connect.
+    function doPost(e) {
+      Logger.log("Received a POST request (Google Sheet integration is currently disabled in the app).");
+      if (e) {
+        Logger.log("Raw e.parameter: " + JSON.stringify(e.parameter));
+        if (e.postData && e.postData.contents) {
+          Logger.log("Raw e.postData.contents: " + e.postData.contents);
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ success: false, message: 'Google Sheet integration currently disabled.' })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // You can optionally add a doGet function if you ever need to test via browser URL
+    function doGet(e) {
+      return ContentService.createTextOutput("This Google Apps Script is for POST requests only (e.g., from your KTransport360 app).").setMimeType(ContentService.MimeType.TEXT);
+    }
+    ```
+
+**Step 3: Save the Script.**
+* In the Apps Script window, click the floppy disk icon (💾) or go to `File > Save project`.
+
+**Step 4: Re-Publish the Script (New Version).**
+* Click on the `Deploy` button.
+* Choose `Manage deployments`.
+* Click the pencil icon (✏️) next to your existing deployment.
+* Next to "Version", click `New version`.
+* Click the blue `Deploy` button.
+* Click `Done`.
+
+---
+
+### **Step 3: Final Test (Crucial Cache Clear!)**
+
+This will ensure your app is running purely locally.
+
+1.  **Crucially: Clear your browser's cache for your app's specific URL again, as aggressively as possible, on **both your phone and your desktop browser****. Restart both devices. This is absolutely critical to ensure your app is running the new code.
+2.  **Open your KTransport360 Driver App** from your home screen shortcut on your phone (or direct URL on desktop).
+3.  **Perform any action** (e.g., complete a ride, add a new ride).
+
+You should now see the app working normally, without any pop-up messages about Google Sheet integration failure. The app will save all data locally, and the "Clear All Completed Rides" button will work as expected, resetting your local earnin
