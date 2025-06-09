@@ -1657,33 +1657,29 @@
         async function sendRideToGoogleSheet(ride) {
             console.log('Attempting to send ride data to Google Sheet:', ride);
 
-            // Prepare data as URL-encoded form data
-            // Note: The structure here must match what the Apps Script expects in e.parameter
-            const dataToSend = new URLSearchParams({
-                type: 'completed_ride', // This tells our robot friend what kind of data it is
-                customerName: ride.name,
-                customerPhone: ride.phone,
-                // The 'date' field from the ride object is the pickupDate from the input.
-                // We map 'scheduledTime' from the ride object to the 'Scheduled Time' column in the sheet.
-                scheduledTime: ride.scheduledTime, 
-                pickupLocation: ride.pickupLocation,
-                dropoffLocation: ride.dropoffLocation,
-                fareAmount: ride.fare,
-                pickupTimeActual: ride.pickupTime, // Actual pickup time
-                dropoffTimeActual: ride.dropoffTime, // Actual dropoff time
-            }).toString();
-
+            // NEW: Use FormData for highly compatible sending to Google Apps Script.
+            // This will send data as 'multipart/form-data' or 'application/x-www-form-urlencoded'
+            // depending on browser, which Google Apps Script handles well in e.parameter.
+            const formData = new FormData();
+            formData.append('type', 'completed_ride'); // Telling our script what kind of data it is
+            formData.append('customerName', ride.name);
+            formData.append('customerPhone', ride.phone);
+            formData.append('pickupLocation', ride.pickupLocation);
+            formData.append('dropoffLocation', ride.dropoffLocation);
+            formData.append('scheduledTime', ride.scheduledTime);
+            formData.append('pickupTimeActual', ride.pickupTime);
+            formData.append('dropoffTimeActual', ride.dropoffTime);
+            formData.append('fareAmount', ride.fare);
+            // Do NOT append 'timeAddedToApp' as it's not in your Google Sheet columns.
 
             try {
-                // IMPORTANT: This uses 'no-cors' mode because of how Google Apps Script web apps are deployed.
-                // We also set 'Content-Type' to 'application/x-www-form-urlencoded' to match the new body format.
+                // With FormData, the browser automatically sets the correct 'Content-Type' header.
+                // We specifically remove the 'Content-Type' header here to let FormData manage it.
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded' // NEW: Changed content type
-                    },
-                    body: dataToSend, // NEW: Sending URL-encoded string
-                    mode: 'no-cors' // Required for Google Apps Script web app deployments
+                    // headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, // REMOVED THIS LINE
+                    body: formData, // Send the FormData object directly
+                    mode: 'no-cors' 
                 });
 
                 console.log('Request to Google Script sent. Check your spreadsheet for confirmation.');
@@ -1692,7 +1688,6 @@
 
             } catch (error) {
                 console.error('Network error sending ride data to Google Sheet:', error);
-                // This catch block means a network error occurred preventing the fetch
                 return false; // Indicate that sending failed due to network
             }
         }
