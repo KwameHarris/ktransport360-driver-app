@@ -1657,31 +1657,32 @@
         async function sendRideToGoogleSheet(ride) {
             console.log('Attempting to send ride data to Google Sheet:', ride);
 
-            // Format the data exactly how your Google Script expects it
-            const dataToSend = {
+            // Prepare data as URL-encoded form data
+            // Note: The structure here must match what the Apps Script expects in e.parameter
+            const dataToSend = new URLSearchParams({
                 type: 'completed_ride', // This tells our robot friend what kind of data it is
                 customerName: ride.name,
                 customerPhone: ride.phone,
-                pickupDate: ride.date,
-                pickupTime: ride.scheduledTime, // This is the originally scheduled time
+                // The 'date' field from the ride object is the pickupDate from the input.
+                // We map 'scheduledTime' from the ride object to the 'Scheduled Time' column in the sheet.
+                scheduledTime: ride.scheduledTime, 
                 pickupLocation: ride.pickupLocation,
                 dropoffLocation: ride.dropoffLocation,
                 fareAmount: ride.fare,
                 pickupTimeActual: ride.pickupTime, // Actual pickup time
                 dropoffTimeActual: ride.dropoffTime, // Actual dropoff time
-                // Removed timeAddedToApp as per your Google Sheet's column structure
-            };
+            }).toString();
+
 
             try {
                 // IMPORTANT: This uses 'no-cors' mode because of how Google Apps Script web apps are deployed.
-                // This means we send the data, but we don't get a direct "success" message back in the browser.
-                // You'll need to check your Google Sheet to confirm it was added.
+                // We also set 'Content-Type' to 'application/x-www-form-urlencoded' to match the new body format.
                 const response = await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/x-www-form-urlencoded' // NEW: Changed content type
                     },
-                    body: JSON.stringify(dataToSend),
+                    body: dataToSend, // NEW: Sending URL-encoded string
                     mode: 'no-cors' // Required for Google Apps Script web app deployments
                 });
 
@@ -1751,33 +1752,3 @@
     </script>
 </body>
 </html>
-```
-
-Here's a breakdown of the changes and how it works:
-
-**Key Changes in the Code:**
-
-1.  **`pendingUploads` Array:** A new array `pendingUploads` is added to your app's memory to temporarily store rides that couldn't be sent to Google Sheet.
-2.  **`PENDING_UPLOADS_STORAGE_KEY`:** A new key is used to save this `pendingUploads` array to your phone's local storage, so even if you close the app, it remembers which rides still need to be sent.
-3.  **Updated `loadData()` and `saveData()`:** These functions now also load and save the `pendingUploads` array, ensuring that this "waiting room" for data is always up-to-date.
-4.  **Modified `dropoffCustomer()` function:**
-    * When you click "🔵 DROPPED OFF", your app first attempts to send the ride data to your Google Sheet using the `sendRideToGoogleSheet` function.
-    * If `sendRideToGoogleSheet` tells the app that it **couldn't send** the data (usually because there's no internet connection), the ride is immediately added to the `pendingUploads` array.
-    * You'll get a notification like "Data saved locally. Will try to send to Google Sheet later."
-5.  **New `addRideToPendingUploads()` function:** This simple helper adds a ride to the `pendingUploads` array.
-6.  **New `processPendingUploads()` function:** This is like a little watchdog!
-    * It checks if there are any rides waiting in the `pendingUploads` array.
-    * It then checks if your phone currently has an internet connection (`navigator.onLine`).
-    * If it finds both (rides waiting AND internet), it tries to send each waiting ride to your Google Sheet.
-    * If a ride is successfully sent (meaning the request was sent over the network), it removes that ride from the `pendingUploads` queue.
-    * You'll get notifications about the syncing process.
-7.  **`setInterval(processPendingUploads, 10000)`:** This line is added to your `DOMContentLoaded` event, making the `processPendingUploads` function run automatically every 10 seconds (10,000 milliseconds) to check for and send any waiting rides.
-8.  **`sendRideToGoogleSheet` now explicitly returns `true` or `false`** based on whether the network request was successfully initiated, allowing `dropoffCustomer` to decide if it needs to save the ride for later.
-
-**What you need to do next:**
-
-1.  **Update your Google Apps Script (from Part 1 above):** Make sure you've replaced your previous Apps Script code with the new, shorter version I provided in Part 1. This ensures your Google Sheet is ready to receive data in the correct 9-column format. **Then, re-deploy it to get the changes live.**
-2.  **Copy this entire code block from the `locations-app` Canvas above.**
-3.  **Paste this entire code** into your `index.html` file on GitHub, replacing all the previous content.
-
-Once both your Google Apps Script and your `index.html` file are updated and live, try completing a ride both with and without an internet connection on your phone! You should see the different notifications and eventually see the data appear in your Google She
