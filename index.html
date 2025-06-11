@@ -177,29 +177,15 @@
             opacity: 0.9;
         }
 
-
-
-
-
-
-
-
          .truck-icon {
           display: inline-block;
           margin-right: 8px;
           vertical-align: middle;
-}
+        }
 
-          .logo-svg {
+        .logo-svg {
           vertical-align: middle;
-}
-
-
-
-
-
-
-
+        }
 
         .status-badge {
             background: #4CAF50;
@@ -382,11 +368,7 @@
             color: white;
         }
 
-
-
-
-
-.nav-buttons {
+        .nav-buttons {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
@@ -411,11 +393,6 @@
             color: white;
             transform: translateY(-1px);
         }
-
-
-
-
-
 
         .btn:hover {
             transform: translateY(-2px);
@@ -454,426 +431,9 @@
             color: white;
         }
 
-        /* PLACE PART 2 CODE HERE */
+        /* Place next section here */
 
 
-
-
-
-
-
-Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI components):
-
-```css
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            max-width: 420px;
-            width: 100%;
-            background: white;
-            border-top: 1px solid #eee;
-            padding: 10px 0;
-            display: flex;
-            justify-content: space-around;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            z-index: 999;
-            border-top-left-radius: 12px;
-            border-top-right-radius: 12px;
-        }
-
-        .nav-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 8px 12px;
-            cursor: pointer;
-            color: #666;
-            transition: color 0.2s;
-            text-decoration: none;
-            font-size: 12px;
-            flex: 1;
-        }
-
-        .nav-item:hover,
-        .nav-item.active {
-            color: #667eea;
-        }
-
-        .nav-item-icon {
-            font-size: 18px;
-            margin-bottom: 4px;
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            backdrop-filter: blur(5px);
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .modal.open {
-            display: flex;
-            opacity: 1;
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 5% auto;
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-            position: relative;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            transform: translateY(20px);
-            transition: transform 0.3s ease;
-        }
-
-        .modal.open .modal-content {
-            transform: translateY(0);
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-            position: absolute;
-            right: 15px;
-            top: 10px;
-        }
-
-        .close:hover {
-            color: #000;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .form-group input,
-        .form-group select,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #eee;
-            border-radius: 8px;
-            font-size: 16px;
-            transition: border-color 0.2s;
-        }
-
-        .form-group input:focus,
-        .form-group select:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .ride-list {
-            max-height: 400px;
-            overflow-y: auto;
-        }
-
-        .ride-item {
-            background: #f8f9fa;
-            padding: 15px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            border-left: 4px solid #667eea;
-        }
-
-        .ride-item h4 {
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .ride-item p {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 3px;
-        }
-
-        .ride-actions {
-            margin-top: 10px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .customer-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .customer-card {
-            background: white;
-            border: 2px solid #eee;
-            border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .customer-card:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
-        }
-
-        .customer-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: #667eea;
-            margin: 0 auto 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-        .customer-name {
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .customer-rides {
-            font-size: 12px;
-            color: #666;
-        }
-
-        .analytics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .analytics-card {
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            border: 2px solid #eee;
-        }
-
-        .analytics-value {
-            font-size: 32px;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-
-        .analytics-label {
-            font-size: 14px;
-            color: #666;
-        }
-
-        .chart-container {
-            margin-top: 20px;
-            background: white;
-            padding: 20px;
-            border-radius: 12px;
-            border: 2px solid #eee;
-        }
-
-        .communication-buttons {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .comm-btn {
-            padding: 10px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            transition: all 0.2s;
-        }
-
-        .comm-btn.call { background: #28a745; color: white; }
-        .comm-btn.sms { background: #007bff; color: white; }
-        .comm-btn.whatsapp { background: #25d366; color: white; }
-        .comm-btn.email { background: #6c757d; color: white; }
-
-        .comm-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        .photo-upload {
-            text-align: center;
-            padding: 20px;
-            border: 2px dashed #ddd;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .photo-upload:hover {
-            border-color: #667eea;
-            background: #f8f9ff;
-        }
-
-        .photo-preview {
-            max-width: 100px;
-            max-height: 100px;
-            border-radius: 8px;
-            margin: 10px auto 0;
-            display: block;
-        }
-
-        .success-message, .error-message {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 350px;
-            padding: 12px;
-            border-radius: 8px;
-            z-index: 1000;
-            text-align: center;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            animation: fadeInOut 4s forwards;
-        }
-
-        .success-message {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .error-message {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-            10% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            90% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            font-size: 12px;
-            border-radius: 12px;
-            font-weight: 600;
-        }
-
-        .badge-success { background: #d4edda; color: #155724; }
-        .badge-warning { background: #fff3cd; color: #856404; }
-        .badge-danger { background: #f8d7da; color: #721c24; }
-
-        .floating-add {
-            position: fixed;
-            bottom: 80px;
-            right: 20px;
-            width: 60px;
-            height: 60px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            transition: all 0.2s;
-            z-index: 100;
-        }
-
-        .floating-add:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #dc3545;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
-        .ride-status {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .status-scheduled { background: #e3f2fd; color: #1976d2; }
-        .status-in-progress { background: #fff3e0; color: #f57c00; }
-        .status-completed { background: #e8f5e8; color: #388e3c; }
-        .status-cancelled { background: #ffebee; color: #d32f2f; }
-
-        .rating-stars {
-            color: #ffc107;
-            font-size: 16px;
-            margin: 5px 0;
-        }
-
-        .feedback-section {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-        }
-
-        .feedback-item {
-            background: white;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            border-left: 3px solid #667eea;
-        }
-
-        /* PLACE PART 3 CODE HERE */
-```
 
 .bottom-nav {
             position: fixed;
@@ -1282,92 +842,58 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
             border-left: 3px solid #667eea;
         }
 
-        /* PLACE PART 3 CODE HERE */
+        /* Place next section here */
 
 
-.map-container {
-            height: 200px;
-            background: #f0f0f0;
-            border-radius: 8px;
-            margin: 15px 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: #666;
-            font-size: 14px;
-            text-align: center;
+.emergency-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: #f44336;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+            z-index: 1000;
+            transition: all 0.2s;
+        }
+        .emergency-button:hover {
+            transform: scale(1.1);
+            background: #d32f2f;
         }
 
-        .distance-badge {
-            background: #e3f2fd;
-            color: #1976d2;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-top: 10px;
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 300px;
+            max-width: 90vw;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            transition: right 0.3s ease;
+            z-index: 1001;
+            padding: 20px;
+            overflow-y: auto;
         }
 
+        .settings-panel.open {
+            right: 0;
+        }
 
+        @media (max-width: 480px) {
+            .settings-panel {
+                width: 280px;
+                max-width: 85vw;
+                padding: 15px;
+            }
+        }
 
-
-    .emergency-button {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
-    background: #f44336;
-    border: none;
-    border-radius: 50%;
-    color: white;
-    font-size: 18px;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
-    z-index: 1000;
-    transition: all 0.2s;
-}
-.emergency-button:hover {
-    transform: scale(1.1);
-    background: #d32f2f;
-}
-
-
-
-
-.settings-panel {
-    position: fixed;
-    top: 0;
-    right: -100%;
-    width: 300px;
-    max-width: 90vw; /* This ensures it never exceeds 90% of screen width */
-    height: 100vh;
-    background: white;
-    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-    transition: right 0.3s ease;
-    z-index: 1001;
-    padding: 20px;
-    overflow-y: auto;
-}
-
-.settings-panel.open {
-    right: 0;
-}
-
-/* Mobile-specific adjustments */
-@media (max-width: 480px) {
-    .settings-panel {
-        width: 280px; /* Slightly smaller on very small screens */
-        max-width: 85vw;
-        padding: 15px; /* Reduce padding on mobile */
-    }
-}
-   
-
-
-
-      .settings-item {
+        .settings-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -1375,12 +901,6 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
             border-bottom: 1px solid #eee;
             cursor: pointer;
         }
-
-
-
-
-
-
 
         .toggle-switch {
             position: relative;
@@ -1786,61 +1306,54 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
             ⚙️
         </button>
 
-
-
-
         <!-- Header -->
         <div class="header">
-           
-
            <h1>
                <span class="truck-icon">
-   <span class="truck-icon">
-    <svg width="28" height="28" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="logo-svg">
-        <!-- Green background circle -->
-        <circle cx="50" cy="50" r="48" fill="#4CAF50" stroke="#FF0000" stroke-width="2"/>
-        
-        <!-- Red car body -->
-        <g transform="translate(50,50) scale(0.8)">
-            <!-- Main car body -->
-            <path d="M -20 -8 L -15 -15 L 15 -15 L 20 -8 L 20 8 L -20 8 Z" fill="#FF0000" stroke="#000" stroke-width="1"/>
-            
-            <!-- Windshield -->
-            <path d="M -15 -15 L -10 -20 L 10 -20 L 15 -15 Z" fill="#333" stroke="#000" stroke-width="1"/>
-            
-            <!-- Hood lines -->
-            <line x1="-5" y1="-15" x2="-5" y2="-8" stroke="#000" stroke-width="1"/>
-            <line x1="0" y1="-15" x2="0" y2="-8" stroke="#000" stroke-width="1"/>
-            <line x1="5" y1="-15" x2="5" y2="-8" stroke="#000" stroke-width="1"/>
-            
-            <!-- Headlights -->
-            <rect x="-18" y="-6" width="3" height="4" fill="#FFFF00" stroke="#000" stroke-width="0.5"/>
-            <rect x="15" y="-6" width="3" height="4" fill="#FFFF00" stroke="#000" stroke-width="0.5"/>
-            
-            <!-- Grille -->
-            <rect x="-12" y="-8" width="24" height="4" fill="#000"/>
-            <line x1="-10" y1="-6" x2="10" y2="-6" stroke="#333" stroke-width="0.5"/>
-            
-            <!-- Wheels -->
-            <circle cx="-12" cy="10" r="4" fill="#333" stroke="#000" stroke-width="1"/>
-            <circle cx="12" cy="10" r="4" fill="#333" stroke="#000" stroke-width="1"/>
-            <circle cx="-12" cy="10" r="2" fill="#666"/>
-            <circle cx="12" cy="10" r="2" fill="#666"/>
-            
-            <!-- Side mirrors -->
-            <rect x="-22" y="-12" width="2" height="3" fill="#FF0000" stroke="#000" stroke-width="0.5"/>
-            <rect x="20" y="-12" width="2" height="3" fill="#FF0000" stroke="#000" stroke-width="0.5"/>
-        </g>
-    </svg>
-</span>
-                KTransport360 Driver
-            </h1>
+                   <svg width="28" height="28" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="logo-svg">
+                       <!-- Green background circle -->
+                       <circle cx="50" cy="50" r="48" fill="#4CAF50" stroke="#FF0000" stroke-width="2"/>
+                       
+                       <!-- Red car body -->
+                       <g transform="translate(50,50) scale(0.8)">
+                           <!-- Main car body -->
+                           <path d="M -20 -8 L -15 -15 L 15 -15 L 20 -8 L 20 8 L -20 8 Z" fill="#FF0000" stroke="#000" stroke-width="1"/>
+                           
+                           <!-- Windshield -->
+                           <path d="M -15 -15 L -10 -20 L 10 -20 L 15 -15 Z" fill="#333" stroke="#000" stroke-width="1"/>
+                           
+                           <!-- Hood lines -->
+                           <line x1="-5" y1="-15" x2="-5" y2="-8" stroke="#000" stroke-width="1"/>
+                           <line x1="0" y1="-15" x2="0" y2="-8" stroke="#000" stroke-width="1"/>
+                           <line x1="5" y1="-15" x2="5" y2="-8" stroke="#000" stroke-width="1"/>
+                           
+                           <!-- Headlights -->
+                           <rect x="-18" y="-6" width="3" height="4" fill="#FFFF00" stroke="#000" stroke-width="0.5"/>
+                           <rect x="15" y="-6" width="3" height="4" fill="#FFFF00" stroke="#000" stroke-width="0.5"/>
+                           
+                           <!-- Grille -->
+                           <rect x="-12" y="-8" width="24" height="4" fill="#000"/>
+                           <line x1="-10" y1="-6" x2="10" y2="-6" stroke="#333" stroke-width="0.5"/>
+                           
+                           <!-- Wheels -->
+                           <circle cx="-12" cy="10" r="4" fill="#333" stroke="#000" stroke-width="1"/>
+                           <circle cx="12" cy="10" r="4" fill="#333" stroke="#000" stroke-width="1"/>
+                           <circle cx="-12" cy="10" r="2" fill="#666"/>
+                           <circle cx="12" cy="10" r="2" fill="#666"/>
+                           
+                           <!-- Side mirrors -->
+                           <rect x="-22" y="-12" width="2" height="3" fill="#FF0000" stroke="#000" stroke-width="0.5"/>
+                           <rect x="20" y="-12" width="2" height="3" fill="#FF0000" stroke="#000" stroke-width="0.5"/>
+                       </g>
+                   </svg>
+               </span>
+               KTransport360 Driver
+           </h1>
            
-
-            <p class="subtitle">Simple & Reliable Transport Management</p>
-            <div class="status-badge">
-                App Ready - All data saved on your phone
-            </div>
+           <p class="subtitle">Simple & Reliable Transport Management</p>
+           <div class="status-badge">
+               App Ready - All data saved on your phone
+           </div>
         </div>
 
         <!-- Main Content -->
@@ -1861,9 +1374,6 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
                 </button>
             </div>
 
-
-
-
             <!-- Backup Status -->
             <div class="backup-status">
                 <div class="sync-indicator"></div>
@@ -1879,7 +1389,11 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
                 </button>
             </div>
 
-            <!-- PLACE PART 4 CODE HERE -->
+            <!-- Place next section here -->
+
+
+
+
 
 
 
@@ -2111,12 +1625,9 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
         </div>
     </div>
 
+    <!-- Place next section here -->
 
 
-
-
-
-    <!-- PLACE PART 5 CODE HERE -->
 <!-- Analytics Modal -->
     <div id="analyticsModal" class="modal">
         <div class="modal-content">
@@ -2350,7 +1861,10 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
         </button>
     </div>
 
-    <script>
+    <!-- Place next section here -->
+
+
+<script>
         // --- Global Variables ---
         let rides = [];
         let customers = [];
@@ -2548,10 +2062,7 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
             }, 4000);
         }
 
-        // PLACE PART 6 CODE HERE -->
-
-
-// --- Navigation Functions ---
+        // --- Navigation Functions ---
         function showHome() {
             setActiveNav(0);
         }
@@ -2788,9 +2299,7 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
                 price: parseFloat(document.getElementById('ridePrice').value),
                 status: 'scheduled',
                 priority: document.getElementById('ridePriority').value,
-                notes: document.getElementById('rideNotes').value,
-                distance: calculateDistance(),
-                duration: calculateDuration()
+                notes: document.getElementById('rideNotes').value
             };
 
             rides.push(newRide);
@@ -2849,10 +2358,6 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
             }
             saveCustomers();
         }
-
-
-
-
         
         function editRide(rideId) {
             const ride = rides.find(r => r.id === rideId);
@@ -2983,15 +2488,17 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
             }
         }
 
-        function calculateDistance() {
-            return `${(Math.random() * 20 + 5).toFixed(1)} miles`;
-        }
+     
 
-        function calculateDuration() {
-            return `${Math.floor(Math.random() * 30) + 10} minutes`;
-        }
 
-        function filterRides() {
+
+
+
+
+
+
+
+function filterRides() {
             const searchTerm = document.getElementById('ridesSearch').value.toLowerCase();
             const today = new Date().toISOString().split('T')[0];
             const tomorrow = new Date();
@@ -3045,7 +2552,7 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
                     <div class="empty-state">
                         <div class="empty-state-icon">🚗</div>
                         <h3>No rides found</h3>
-                        <p>No rides scheduled for this period or matching your search.</p>
+                        <p>No rides match your search criteria.</p>
                     </div>
                 `;
                 return;
@@ -3062,7 +2569,6 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
                             <p>⏰ ${ride.date} at ${ride.time}</p>
                             <p>💰 $${ride.price.toFixed(2)}</p>
                             ${ride.notes ? `<p>📝 ${ride.notes}</p>` : ''}
-                            ${ride.distance ? `<p>📏 ${ride.distance} • ${ride.duration}</p>` : ''}
                         </div>
                         <div style="text-align: right;">
                             <span class="ride-status status-${ride.status}">${ride.status.toUpperCase()}</span>
@@ -3082,11 +2588,6 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
                         <button class="comm-btn sms" onclick="smsCustomer('${ride.customerPhone}')">💬 SMS</button>
                         <button class="comm-btn whatsapp" onclick="whatsappCustomer('${ride.customerPhone}')">📱 WhatsApp</button>
                         ${ride.customerEmail ? `<button class="comm-btn email" onclick="emailCustomer('${ride.customerEmail}')">✉️ Email</button>` : ''}
-                    </div>
-                    
-                    <div class="map-container">
-                        🗺️ Route from ${ride.pickupLocation} to ${ride.dropoffLocation}
-                        <div class="distance-badge">${ride.distance || 'Distance TBD'}</div>
                     </div>
                 </div>
             `).join('');
@@ -3450,7 +2951,7 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
             const headers = [
                 "ID", "Customer Name", "Customer Phone", "Customer Email", "Pickup Location",
                 "Dropoff Location", "Date", "Time", "Price", "Status", "Priority", "Notes",
-                "Rating", "Feedback", "Distance", "Duration"
+                "Rating", "Feedback"
             ];
             const csvRows = [
                 headers.join(','),
@@ -3469,9 +2970,7 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
                         ride.priority,
                         `"${(ride.notes || '').replace(/"/g, '""')}"`,
                         ride.rating || '',
-                        `"${(ride.feedback || '').replace(/"/g, '""')}"`,
-                        `"${ride.distance || ''}"`,
-                        `"${ride.duration || ''}"`
+                        `"${(ride.feedback || '').replace(/"/g, '""')}"`
                     ];
                     return values.join(',');
                 })
@@ -3650,94 +3149,83 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
             console.log(`App is ${isOnline ? 'online' : 'offline'}.`);
         }
 
-
-
-
-
-      function triggerEmergency() {
-    // Create custom emergency modal
-    const emergencyModal = document.createElement('div');
-    emergencyModal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.8);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 10000;
-        font-family: Arial, sans-serif;
-    `;
-    
-    emergencyModal.innerHTML = `
-        <div style="background: white; padding: 30px; border-radius: 15px; text-align: center; max-width: 300px; margin: 20px;">
-            <h2 style="color: #f44336; margin: 0 0 20px 0;">🚨 EMERGENCY</h2>
-            <p style="margin-bottom: 30px; font-size: 16px;">Choose emergency type:</p>
+        function triggerEmergency() {
+            const emergencyModal = document.createElement('div');
+            emergencyModal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10000;
+                font-family: Arial, sans-serif;
+            `;
             
-            <button onclick="call911()" style="
-                width: 100%; 
-                padding: 15px; 
-                margin: 10px 0; 
-                background: #f44336; 
-                color: white; 
-                border: none; 
-                border-radius: 8px; 
-                font-size: 16px; 
-                font-weight: bold;
-                cursor: pointer;
-            ">🚨 CALL 911 - LIFE THREATENING</button>
+            emergencyModal.innerHTML = `
+                <div style="background: white; padding: 30px; border-radius: 15px; text-align: center; max-width: 300px; margin: 20px;">
+                    <h2 style="color: #f44336; margin: 0 0 20px 0;">🚨 EMERGENCY</h2>
+                    <p style="margin-bottom: 30px; font-size: 16px;">Choose emergency type:</p>
+                    
+                    <button onclick="call911()" style="
+                        width: 100%; 
+                        padding: 15px; 
+                        margin: 10px 0; 
+                        background: #f44336; 
+                        color: white; 
+                        border: none; 
+                        border-radius: 8px; 
+                        font-size: 16px; 
+                        font-weight: bold;
+                        cursor: pointer;
+                    ">🚨 CALL 911 - LIFE THREATENING</button>
+                    
+                    <button onclick="callCompany()" style="
+                        width: 100%; 
+                        padding: 15px; 
+                        margin: 10px 0; 
+                        background: #ff9800; 
+                        color: white; 
+                        border: none; 
+                        border-radius: 8px; 
+                        font-size: 16px; 
+                        font-weight: bold;
+                        cursor: pointer;
+                    ">📞 CALL COMPANY - VEHICLE/WORK ISSUE</button>
+                    
+                    <button onclick="closeEmergencyModal()" style="
+                        width: 100%; 
+                        padding: 15px; 
+                        margin: 10px 0; 
+                        background: #666; 
+                        color: white; 
+                        border: none; 
+                        border-radius: 8px; 
+                        font-size: 16px;
+                        cursor: pointer;
+                    ">❌ CANCEL</button>
+                </div>
+            `;
             
-            <button onclick="callCompany()" style="
-                width: 100%; 
-                padding: 15px; 
-                margin: 10px 0; 
-                background: #ff9800; 
-                color: white; 
-                border: none; 
-                border-radius: 8px; 
-                font-size: 16px; 
-                font-weight: bold;
-                cursor: pointer;
-            ">📞 CALL COMPANY - VEHICLE/WORK ISSUE</button>
+            document.body.appendChild(emergencyModal);
             
-            <button onclick="closeEmergencyModal()" style="
-                width: 100%; 
-                padding: 15px; 
-                margin: 10px 0; 
-                background: #666; 
-                color: white; 
-                border: none; 
-                border-radius: 8px; 
-                font-size: 16px;
-                cursor: pointer;
-            ">❌ CANCEL</button>
-        </div>
-    `;
-    
-    document.body.appendChild(emergencyModal);
-    
-    // Add global functions for the buttons
-    window.call911 = function() {
-        closeEmergencyModal();
-        window.location.href = 'tel:911';
-    };
-    
-    window.callCompany = function() {
-        closeEmergencyModal();
-        window.location.href = 'tel:5597074669';
-    };
-    
-    window.closeEmergencyModal = function() {
-        document.body.removeChild(emergencyModal);
-    };
-}
-
-
-
-
-
+            window.call911 = function() {
+                closeEmergencyModal();
+                window.location.href = 'tel:911';
+            };
+            
+            window.callCompany = function() {
+                closeEmergencyModal();
+                window.location.href = 'tel:5597074669';
+            };
+            
+            window.closeEmergencyModal = function() {
+                document.body.removeChild(emergencyModal);
+            };
+        }
 
         function toggleVoiceCommand() {
             isVoiceListening = !isVoiceListening;
@@ -3753,3 +3241,4 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
     </script>
 </body>
 </html>
+
