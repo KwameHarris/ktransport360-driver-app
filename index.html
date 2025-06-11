@@ -239,6 +239,13 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
+        .btn-reschedule {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad); /* Purple gradient */
+            color: white;
+            font-size: 1.4em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
         /* Status Badges */
         .status-badge {
             display: inline-block;
@@ -624,6 +631,53 @@
             </div>
         </div>
 
+        <!-- Reschedule Ride Modal -->
+        <div id="rescheduleRideModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeRescheduleModal()">&times;</span>
+                <h2>📅 Reschedule Ride</h2>
+                
+                <div class="input-group">
+                    <label for="rescheduleCustomerName">Customer Name</label>
+                    <input type="text" id="rescheduleCustomerName" placeholder="Enter customer name">
+                </div>
+
+                <div class="input-group">
+                    <label for="rescheduleCustomerPhone">Phone Number</label>
+                    <input type="tel" id="rescheduleCustomerPhone" placeholder="(904) 555-0123">
+                </div>
+
+                <div class="input-group">
+                    <label for="reschedulePickupDate">Pickup Date</label>
+                    <input type="date" id="reschedulePickupDate">
+                </div>
+
+                <div class="input-group">
+                    <label for="reschedulePickupTime">Pickup Time</label>
+                    <input type="time" id="reschedulePickupTime">
+                </div>
+
+                <div class="input-group">
+                    <label for="reschedulePickupLocationInput">Pickup Location</label>
+                    <input type="text" id="reschedulePickupLocationInput" list="commonLocationsDatalist" placeholder="Select or type a pickup location">
+                </div>
+
+                <div class="input-group">
+                    <label for="rescheduleDropoffLocationInput">Drop-off Location</label>
+                    <input type="text" id="rescheduleDropoffLocationInput" list="commonLocationsDatalist" placeholder="Select or type a drop-off location">
+                </div>
+
+                <div class="input-group">
+                    <label for="rescheduleFareAmount">Fare Amount</label>
+                    <input type="text" id="rescheduleFareAmount" placeholder="$45.00">
+                </div>
+
+                <button class="big-button btn-reschedule" onclick="saveRescheduledRide()">
+                    📅 Update Ride
+                </button>
+            </div>
+        </div>
+
         <!-- Add Ride Modal -->
         <div id="addRideModal" class="modal">
             <div class="modal-content">
@@ -708,6 +762,7 @@
         let ridesData = [];
         let commonLocations = [];
         let rideToCancel = null; // Store the ride being cancelled
+        let rideToReschedule = null; // Store the ride being rescheduled
 
         // Key for storing common locations in localStorage
         const COMMON_LOCATIONS_STORAGE_KEY = 'ktransport360_common_locations';
@@ -743,7 +798,18 @@
             console.log('App initialized successfully');
             updateStatusBar(); // Initial status bar update with current time
 
-            const fareAmountInput = document.getElementById('fareAmount');
+            // Add event listeners for fare amount formatting - both add and reschedule modals
+            setupFareFormatting('fareAmount');
+            setupFareFormatting('rescheduleFareAmount');
+
+            // Add event listeners for phone formatting - both add and reschedule modals
+            setupPhoneFormatting('customerPhone');
+            setupPhoneFormatting('rescheduleCustomerPhone');
+        });
+
+        // Setup fare amount formatting for a given input ID
+        function setupFareFormatting(inputId) {
+            const fareAmountInput = document.getElementById(inputId);
             if (fareAmountInput) {
                 // Event listener for live formatting as the user types
                 fareAmountInput.addEventListener('input', function() {
@@ -790,11 +856,13 @@
                     }
                 });
             } else {
-                console.warn('Fare amount input element not found.');
+                console.warn(`Fare amount input element "${inputId}" not found.`);
             }
+        }
 
-            // --- Phone Number formatting ---
-            const customerPhoneInput = document.getElementById('customerPhone');
+        // Setup phone number formatting for a given input ID
+        function setupPhoneFormatting(inputId) {
+            const customerPhoneInput = document.getElementById(inputId);
             if (customerPhoneInput) {
                 customerPhoneInput.addEventListener('input', function() {
                     let phoneNumber = this.value.replace(/\D/g, ''); // Remove all non-digits
@@ -818,9 +886,9 @@
                     this.value = formattedPhoneNumber;
                 });
             } else {
-                console.warn('Customer phone input element not found.');
+                console.warn(`Customer phone input element "${inputId}" not found.`);
             }
-        });
+        }
 
         // Function to load common locations from localStorage or use defaults
         function loadCommonLocationsData() {
@@ -1207,29 +1275,46 @@
                 `;
             }
 
-            // Buttons only appear if the ride is for today or tomorrow and not completed
+            // Determine which day this ride is for
             const rideDate = new Date(ride.date).toISOString().split('T')[0];
             const today = new Date().toISOString().split('T')[0];
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             const tomorrowDate = tomorrow.toISOString().split('T')[0];
 
-            if ((rideDate === today || rideDate === tomorrowDate) && ride.status === 'scheduled' && !isMissed) { // Don't show buttons if missed
-                actionButtons = `
-                    <button class="btn-pickup" onclick="pickupCustomer(${ride.id})">
-                        🟢 PICKED UP
-                    </button>
-                    <button class="btn-cancel" onclick="cancelRide(${ride.id})">
-                        ❌ CANCEL
-                    </button>
-                `;
-            } else if ((rideDate === today || rideDate === tomorrowDate) && ride.status === 'picked-up') {
-                actionButtons = `
-                    <button class="btn-dropoff" onclick="dropoffCustomer(${ride.id})">
-                        🔵 DROPPED OFF
-                    </button>
-                `;
-            } else { // For future scheduled rides, or if it's missed, no action buttons
+            // Different button logic based on the day and status
+            if (rideDate === today) { // TODAY'S RIDES
+                if (ride.status === 'scheduled' && !isMissed) {
+                    actionButtons = `
+                        <button class="btn-pickup" onclick="pickupCustomer(${ride.id})">
+                            🟢 PICKED UP
+                        </button>
+                        <button class="btn-cancel" onclick="cancelRide(${ride.id})">
+                            ❌ CANCEL
+                        </button>
+                    `;
+                } else if (ride.status === 'picked-up') {
+                    actionButtons = `
+                        <button class="btn-dropoff" onclick="dropoffCustomer(${ride.id})">
+                            🔵 DROPPED OFF
+                        </button>
+                    `;
+                }
+            } else if (rideDate === tomorrowDate || rideDate > tomorrowDate) { // TOMORROW'S RIDES OR FUTURE RIDES
+                if (ride.status === 'scheduled') {
+                    actionButtons = `
+                        <button class="btn-reschedule" onclick="rescheduleRide(${ride.id})">
+                            📅 RESCHEDULE
+                        </button>
+                        <button class="btn-cancel" onclick="cancelRide(${ride.id})">
+                            ❌ CANCEL
+                        </button>
+                    `;
+                }
+            }
+
+            // If no buttons were set (completed rides, missed rides), show status info
+            if (!actionButtons) {
                 // Parse date manually to avoid timezone issues
                 const dateParts = ride.date.split('-'); // "2025-06-12" -> ["2025", "06", "12"]
                 const displayDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2])).toLocaleDateString();
@@ -1239,7 +1324,6 @@
                     </div>
                 `;
             }
-
 
             return `
                 <div class="customer-card ${cardClasses}">
@@ -1384,6 +1468,170 @@
                 document.getElementById('cancelConfirmModal').classList.remove('show');
                 rideToCancel = null;
             }
+        }
+
+        // Handle ride reschedule action
+        function rescheduleRide(rideId) {
+            console.log('Attempting to reschedule ride ID:', rideId);
+            const ride = ridesData.find(r => r.id === rideId);
+            if (!ride) {
+                console.error('Ride not found for rescheduling:', rideId);
+                showNotification('❌ Error: Ride not found for rescheduling!');
+                return;
+            }
+
+            // Store the ride to reschedule and populate the form
+            rideToReschedule = ride;
+            
+            // Pre-fill the reschedule form with current ride data
+            document.getElementById('rescheduleCustomerName').value = ride.name;
+            document.getElementById('rescheduleCustomerPhone').value = ride.phone;
+            document.getElementById('reschedulePickupDate').value = ride.date;
+            
+            // Convert scheduled time back to 24-hour format for the time input
+            const time24 = convertTo24Hour(ride.scheduledTime);
+            document.getElementById('reschedulePickupTime').value = time24;
+            
+            document.getElementById('reschedulePickupLocationInput').value = ride.pickupLocation;
+            document.getElementById('rescheduleDropoffLocationInput').value = ride.dropoffLocation;
+            document.getElementById('rescheduleFareAmount').value = ride.fare;
+
+            // Clear any previous highlighting
+            document.querySelectorAll('.missing-field').forEach(el => {
+                el.classList.remove('missing-field');
+            });
+
+            // Show the reschedule modal
+            document.getElementById('rescheduleRideModal').classList.add('show');
+        }
+
+        // Helper function to convert 12-hour time to 24-hour format (e.g., "2:30 PM" -> "14:30")
+        function convertTo24Hour(time12) {
+            if (!time12) return '';
+            
+            const [time, modifier] = time12.split(' ');
+            let [hours, minutes] = time.split(':');
+            
+            if (hours === '12') {
+                hours = '00';
+            }
+            
+            if (modifier === 'PM') {
+                hours = parseInt(hours, 10) + 12;
+            }
+            
+            return `${hours.toString().padStart(2, '0')}:${minutes}`;
+        }
+
+        // Close the reschedule modal
+        function closeRescheduleModal() {
+            document.getElementById('rescheduleRideModal').classList.remove('show');
+            rideToReschedule = null;
+            showNotification('Reschedule cancelled - ride remains as originally scheduled');
+        }
+
+        // Save the rescheduled ride
+        function saveRescheduledRide() {
+            console.log('Attempting to save rescheduled ride.');
+            
+            if (!rideToReschedule) {
+                showNotification('❌ Error: No ride selected for rescheduling');
+                return;
+            }
+
+            // Get references to reschedule input elements
+            const customerNameInput = document.getElementById('rescheduleCustomerName');
+            const customerPhoneInput = document.getElementById('rescheduleCustomerPhone');
+            const pickupDateInput = document.getElementById('reschedulePickupDate');
+            const pickupTimeInput = document.getElementById('reschedulePickupTime');
+            const pickupLocationInput = document.getElementById('reschedulePickupLocationInput');
+            const dropoffLocationInput = document.getElementById('rescheduleDropoffLocationInput');
+            const fareAmountInput = document.getElementById('rescheduleFareAmount');
+
+            // Get trimmed values
+            const name = customerNameInput.value.trim();
+            const phone = customerPhoneInput.value.trim();
+            const date = pickupDateInput.value;
+            const time = pickupTimeInput.value;
+            const pickup = pickupLocationInput.value.trim();
+            const dropoff = dropoffLocationInput.value.trim();
+            const fare = fareAmountInput.value.trim();
+
+            let missingFields = false; // Flag to track if any fields are missing
+
+            // Clear previous highlighting
+            document.querySelectorAll('.missing-field').forEach(el => {
+                el.classList.remove('missing-field');
+            });
+
+            // Basic validation and highlighting
+            if (!name) {
+                customerNameInput.classList.add('missing-field');
+                missingFields = true;
+            }
+            if (!phone) {
+                customerPhoneInput.classList.add('missing-field');
+                missingFields = true;
+            }
+            if (!date) {
+                pickupDateInput.classList.add('missing-field');
+                missingFields = true;
+            }
+            if (!time) {
+                pickupTimeInput.classList.add('missing-field');
+                missingFields = true;
+            }
+            if (!pickup) {
+                pickupLocationInput.classList.add('missing-field');
+                missingFields = true;
+            }
+            if (!dropoff) {
+                dropoffLocationInput.classList.add('missing-field');
+                missingFields = true;
+            }
+
+            if (missingFields) {
+                showNotification('❌ Please fill in all highlighted fields!'); 
+                return; // Stop the function if fields are missing
+            }
+
+            // Automatically add new locations to the common list if they are not already there
+            if (pickup) {
+                addLocationIfNew(pickup);
+            }
+            if (dropoff) {
+                addLocationIfNew(dropoff);
+            }
+
+            // Format fare to ensure it has a $ sign and is a valid number (e.g., "$45.00")
+            let formattedFare = '';
+            const fareNum = parseFloat(fare.replace(/[^0-9.]/g, '')); // Remove non-numeric except dot
+            if (!isNaN(fareNum)) {
+                formattedFare = `$${fareNum.toFixed(2)}`;
+            } else {
+                formattedFare = '$0.00'; // Default to $0.00 if fare is invalid/empty
+            }
+            
+            // Update the existing ride with new information
+            rideToReschedule.name = name;
+            rideToReschedule.phone = phone;
+            rideToReschedule.pickupLocation = pickup;
+            rideToReschedule.dropoffLocation = dropoff;
+            rideToReschedule.date = date;
+            rideToReschedule.scheduledTime = formatTime(time);
+            rideToReschedule.fare = formattedFare;
+            // Keep the same ID and other properties
+            
+            saveData(); // Persist the updated data
+
+            closeRescheduleModal(); // Close the reschedule modal
+            showNotification(`📅 Ride for ${name} has been rescheduled!`);
+            updateStats(); // Update home screen statistics
+            
+            // Refresh all ride screens since the ride may have moved between days
+            displayTodaysRides();
+            displayTomorrowsRides();
+            displayFutureRides();
         }
 
         // Show completed rides details modal
@@ -1752,6 +2000,7 @@
             const addModal = document.getElementById('addRideModal');
             const cancelModal = document.getElementById('cancelConfirmModal');
             const completedModal = document.getElementById('completedRidesModal');
+            const rescheduleModal = document.getElementById('rescheduleRideModal');
             
             if (addModal && event.target === addModal) {
                 closeModal();
@@ -1761,6 +2010,9 @@
             }
             if (completedModal && event.target === completedModal) {
                 closeCompletedRidesModal();
+            }
+            if (rescheduleModal && event.target === rescheduleModal) {
+                closeRescheduleModal();
             }
         };
 
