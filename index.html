@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>KTransport360 Driver</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -12,19 +13,144 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Inter', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding-bottom: 70px;
+        }
+
+        /* Dark Mode styles */
+        body.dark-mode {
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            color: #e2e8f0;
+        }
+        body.dark-mode .container,
+        body.dark-mode .modal-content,
+        body.dark-mode .settings-panel,
+        body.dark-mode .customer-card,
+        body.dark-mode .analytics-card,
+        body.dark-mode .chart-container,
+        body.dark-mode .feedback-item,
+        body.dark-mode .export-card,
+        body.dark-mode .ride-item {
+            background: #2d3748;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border: none;
+        }
+        body.dark-mode .header {
+            background: linear-gradient(135deg, #2a4365 0%, #3182ce 100%);
+        }
+        body.dark-mode .profile-info h3,
+        body.dark-mode .feedback-section h3,
+        body.dark-mode .customer-name,
+        body.dark-mode .timeline-content,
+        body.dark-mode .form-group label {
+            color: #e2e8f0;
+        }
+        body.dark-mode .profile-info p,
+        body.dark-mode .customer-rides,
+        body.dark-mode .timeline-time,
+        body.dark-mode .filter-tab,
+        body.dark-mode .empty-state,
+        body.dark-mode .analytics-label,
+        body.dark-mode .feedback-item p {
+            color: #a0aec0;
+        }
+        body.dark-mode .badge-warning {
+            background: #ecc94b;
+            color: #2d3748;
+        }
+        body.dark-mode .badge-success {
+            background: #48bb78;
+            color: #2d3748;
+        }
+        body.dark-mode .status-badge {
+            background: #48bb78;
+        }
+        body.dark-mode .backup-status {
+            background: #2f855a;
+            color: #edf2f7;
+        }
+        body.dark-mode .sync-indicator {
+            background: #48bb78;
+        }
+        body.dark-mode .form-group input,
+        body.dark-mode .form-group select,
+        body.dark-mode .form-group textarea,
+        body.dark-mode .search-input {
+            background: #4a5568;
+            border-color: #4a5568;
+            color: #e2e8f0;
+        }
+        body.dark-mode .form-group input:focus,
+        body.dark-mode .form-group select:focus,
+        body.dark-mode .form-group textarea:focus,
+        body.dark-mode .search-input:focus {
+            border-color: #667eea;
+        }
+        body.dark-mode .filter-tabs {
+            background: #4a5568;
+        }
+        body.dark-mode .filter-tab {
+            color: #e2e8f0;
+        }
+        body.dark-mode .filter-tab.active {
+            background: #667eea;
+            color: white;
+        }
+        body.dark-mode .bottom-nav {
+            background: #2d3748;
+            border-top-color: #4a5568;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+        }
+        body.dark-mode .nav-item {
+            color: #a0aec0;
+        }
+        body.dark-mode .nav-item:hover,
+        body.dark-mode .nav-item.active {
+            color: #9f7aea;
+        }
+        body.dark-mode .export-icon {
+            color: #9f7aea;
+        }
+        body.dark-mode .modal-content .close {
+            color: #a0aec0;
+        }
+        body.dark-mode .modal-content .close:hover {
+            color: #e2e8f0;
+        }
+        body.dark-mode .photo-upload {
+            border-color: #4a5568;
+        }
+        body.dark-mode .photo-upload:hover {
+            background: #4a5568;
+        }
+        body.dark-mode .success-message {
+            background: #2f855a;
+            color: #edf2f7;
+            border-color: #48bb78;
+        }
+        body.dark-mode .error-message {
+            background: #c53030;
+            color: #fed7d7;
+            border-color: #e53e3e;
         }
 
         .container {
             max-width: 420px;
+            width: 100%;
             margin: 0 auto;
             background: white;
             min-height: 100vh;
             position: relative;
             box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            overflow: hidden;
         }
 
         .header {
@@ -33,6 +159,8 @@
             padding: 20px;
             text-align: center;
             position: relative;
+            border-bottom-left-radius: 12px;
+            border-bottom-right-radius: 12px;
         }
 
         .header h1 {
@@ -59,7 +187,7 @@
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 12px;
-            margin: 15px 0;
+            margin: 15px auto 0;
             display: inline-flex;
             align-items: center;
             gap: 5px;
@@ -71,6 +199,88 @@
 
         .main-content {
             padding: 20px;
+        }
+
+        .driver-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .profile-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .profile-info h3 {
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .profile-info p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .backup-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: #e8f5e8;
+            color: #2e7d32;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .sync-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .earnings-summary {
+            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .earnings-today {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .earnings-label {
+            font-size: 14px;
+            opacity: 0.9;
         }
 
         .ride-cards {
@@ -152,6 +362,41 @@
             color: white;
         }
 
+
+
+
+
+.nav-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .nav-btn {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s;
+            background: #f8f9fa;
+            color: #666;
+        }
+
+        .nav-btn:hover,
+        .nav-btn.active {
+            background: #667eea;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+
+
+
+
+
         .btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(0,0,0,0.15);
@@ -165,6 +410,41 @@
             background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
         }
 
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-edit {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-complete {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-cancel {
+            background: #dc3545;
+            color: white;
+        }
+
+        /* PLACE PART 2 CODE HERE */
+
+
+
+
+
+
+
+Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI components):
+
+```css
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -178,6 +458,9 @@
             display: flex;
             justify-content: space-around;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 999;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
         }
 
         .nav-item {
@@ -190,6 +473,7 @@
             transition: color 0.2s;
             text-decoration: none;
             font-size: 12px;
+            flex: 1;
         }
 
         .nav-item:hover,
@@ -212,6 +496,15 @@
             height: 100%;
             background-color: rgba(0,0,0,0.5);
             backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.open {
+            display: flex;
+            opacity: 1;
         }
 
         .modal-content {
@@ -225,6 +518,12 @@
             overflow-y: auto;
             position: relative;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.open .modal-content {
+            transform: translateY(0);
         }
 
         .close {
@@ -299,30 +598,7 @@
             margin-top: 10px;
             display: flex;
             gap: 10px;
-        }
-
-        .btn-small {
-            padding: 8px 12px;
-            font-size: 12px;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-edit {
-            background: #ffc107;
-            color: #333;
-        }
-
-        .btn-complete {
-            background: #28a745;
-            color: white;
-        }
-
-        .btn-cancel {
-            background: #dc3545;
-            color: white;
+            flex-wrap: wrap;
         }
 
         .customer-grid {
@@ -408,7 +684,7 @@
 
         .communication-buttons {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 10px;
             margin-top: 15px;
         }
@@ -426,25 +702,10 @@
             transition: all 0.2s;
         }
 
-        .comm-btn.call {
-            background: #28a745;
-            color: white;
-        }
-
-        .comm-btn.sms {
-            background: #007bff;
-            color: white;
-        }
-
-        .comm-btn.whatsapp {
-            background: #25d366;
-            color: white;
-        }
-
-        .comm-btn.email {
-            background: #6c757d;
-            color: white;
-        }
+        .comm-btn.call { background: #28a745; color: white; }
+        .comm-btn.sms { background: #007bff; color: white; }
+        .comm-btn.whatsapp { background: #25d366; color: white; }
+        .comm-btn.email { background: #6c757d; color: white; }
 
         .comm-btn:hover {
             transform: translateY(-1px);
@@ -469,35 +730,42 @@
             max-width: 100px;
             max-height: 100px;
             border-radius: 8px;
-            margin: 10px 0;
+            margin: 10px auto 0;
+            display: block;
         }
 
-        .hidden {
-            display: none !important;
-        }
-
-        .loading {
+        .success-message, .error-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 350px;
+            padding: 12px;
+            border-radius: 8px;
+            z-index: 1000;
             text-align: center;
-            padding: 40px;
-            color: #666;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            animation: fadeInOut 4s forwards;
         }
 
         .success-message {
             background: #d4edda;
             color: #155724;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
             border: 1px solid #c3e6cb;
         }
 
         .error-message {
             background: #f8d7da;
             color: #721c24;
-            padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
             border: 1px solid #f5c6cb;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
         }
 
         .badge {
@@ -508,20 +776,9 @@
             font-weight: 600;
         }
 
-        .badge-success {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .badge-warning {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .badge-danger {
-            background: #f8d7da;
-            color: #721c24;
-        }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
 
         .floating-add {
             position: fixed;
@@ -545,53 +802,609 @@
             box-shadow: 0 6px 20px rgba(0,0,0,0.3);
         }
 
-        @media (max-width: 480px) {
-            .ride-cards {
-                grid-template-columns: 1fr;
-            }
-            
-            .modal-content {
-                margin: 10% auto;
-                width: 95%;
-            }
-            
-            .customer-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
         }
 
-        .stats-overview {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+        .ride-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-scheduled { background: #e3f2fd; color: #1976d2; }
+        .status-in-progress { background: #fff3e0; color: #f57c00; }
+        .status-completed { background: #e8f5e8; color: #388e3c; }
+        .status-cancelled { background: #ffebee; color: #d32f2f; }
+
+        .rating-stars {
+            color: #ffc107;
+            font-size: 16px;
+            margin: 5px 0;
+        }
+
+        .feedback-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .feedback-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid #667eea;
+        }
+
+        /* PLACE PART 3 CODE HERE */
+```
+
+.bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 420px;
+            width: 100%;
+            background: white;
+            border-top: 1px solid #eee;
+            padding: 10px 0;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 999;
+            border-top-left-radius: 12px;
+            border-top-right-radius: 12px;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: #666;
+            transition: color 0.2s;
+            text-decoration: none;
+            font-size: 12px;
+            flex: 1;
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            color: #667eea;
+        }
+
+        .nav-item-icon {
+            font-size: 18px;
+            margin-bottom: 4px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal.open {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
             padding: 20px;
             border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal.open .modal-content {
+            transform: translateY(0);
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            right: 15px;
+            top: 10px;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .form-group {
             margin-bottom: 20px;
         }
 
-        .stats-row {
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #eee;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .ride-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .ride-item {
+            background: #f8f9fa;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .ride-item h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .ride-item p {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .ride-actions {
+            margin-top: 10px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
-        .stats-row:last-child {
-            margin-bottom: 0;
+        .customer-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
         }
 
-        .stat-item {
+        .customer-card {
+            background: white;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            padding: 15px;
             text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .stat-value {
+        .customer-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+        }
+
+        .customer-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #667eea;
+            margin: 0 auto 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
             font-size: 24px;
             font-weight: bold;
+        }
+
+        .customer-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .customer-rides {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .analytics-card {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #eee;
+        }
+
+        .analytics-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .analytics-label {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #eee;
+        }
+
+        .communication-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .comm-btn {
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+
+        .comm-btn.call { background: #28a745; color: white; }
+        .comm-btn.sms { background: #007bff; color: white; }
+        .comm-btn.whatsapp { background: #25d366; color: white; }
+        .comm-btn.email { background: #6c757d; color: white; }
+
+        .comm-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .photo-upload {
+            text-align: center;
+            padding: 20px;
+            border: 2px dashed #ddd;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .photo-upload:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .photo-preview {
+            max-width: 100px;
+            max-height: 100px;
+            border-radius: 8px;
+            margin: 10px auto 0;
             display: block;
         }
 
-        .stat-label {
+        .success-message, .error-message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 350px;
+            padding: 12px;
+            border-radius: 8px;
+            z-index: 1000;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            animation: fadeInOut 4s forwards;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            10% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            90% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
             font-size: 12px;
-            opacity: 0.9;
+            border-radius: 12px;
+            font-weight: 600;
+        }
+
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-warning { background: #fff3cd; color: #856404; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
+
+        .floating-add {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+            z-index: 100;
+        }
+
+        .floating-add:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .ride-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-scheduled { background: #e3f2fd; color: #1976d2; }
+        .status-in-progress { background: #fff3e0; color: #f57c00; }
+        .status-completed { background: #e8f5e8; color: #388e3c; }
+        .status-cancelled { background: #ffebee; color: #d32f2f; }
+
+        .rating-stars {
+            color: #ffc107;
+            font-size: 16px;
+            margin: 5px 0;
+        }
+
+        .feedback-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .feedback-item {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            border-left: 3px solid #667eea;
+        }
+
+        /* PLACE PART 3 CODE HERE */
+
+
+.map-container {
+            height: 200px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            margin: 15px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .distance-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .emergency-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: #f44336;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+            z-index: 1000;
+            transition: all 0.2s;
+        }
+
+        .emergency-button:hover {
+            transform: scale(1.1);
+            background: #d32f2f;
+        }
+
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 300px;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            transition: right 0.3s ease;
+            z-index: 1001;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .settings-panel.open {
+            right: 0;
+        }
+
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 25px;
+            background: #ccc;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: #667eea;
+        }
+
+        .toggle-knob {
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 21px;
+            height: 21px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active .toggle-knob {
+            transform: translateX(25px);
+        }
+
+        .offline-banner {
+            background: #ff9800;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 14px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1002;
+            display: none;
+        }
+
+        .voice-command-btn {
+            position: fixed;
+            bottom: 150px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            background: #9c27b0;
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
+            z-index: 100;
+            transition: all 0.2s;
+        }
+
+        .voice-command-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .voice-command-btn.listening {
+            background: #e91e63;
+            animation: pulse 1s infinite;
         }
 
         .export-options {
@@ -685,40 +1498,9 @@
             opacity: 0.5;
         }
 
-        .quick-actions {
-            position: fixed;
-            bottom: 150px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            z-index: 99;
-        }
-
-        .quick-action {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            border: none;
-            color: white;
-            font-size: 18px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transition: all 0.2s;
-        }
-
-        .quick-action.customers {
-            background: #28a745;
-        }
-
-        .quick-action.analytics {
-            background: #ffc107;
-            color: #333;
-        }
-
-        .quick-action:hover {
-            transform: scale(1.1);
-        }
+        .priority-high { border-left-color: #dc3545 !important; }
+        .priority-medium { border-left-color: #ffc107 !important; }
+        .priority-low { border-left-color: #28a745 !important; }
 
         .timeline {
             position: relative;
@@ -767,479 +1549,191 @@
             color: #333;
         }
 
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: #eee;
-            border-radius: 4px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            transition: width 0.3s ease;
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #dc3545;
-            color: white;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            font-size: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-        }
-
-        .ride-status {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-        }
-
-        .status-scheduled {
-            background: #e3f2fd;
-            color: #1976d2;
-        }
-
-        .status-in-progress {
-            background: #fff3e0;
-            color: #f57c00;
-        }
-
-        .status-completed {
-            background: #e8f5e8;
-            color: #388e3c;
-        }
-
-        .status-cancelled {
-            background: #ffebee;
-            color: #d32f2f;
-        }
-
-        .weather-widget {
-            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
-            color: white;
-            padding: 15px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-
-        .weather-temp {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .weather-desc {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .earnings-summary {
-            background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
-        }
-
-        .earnings-today {
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .earnings-label {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .priority-high {
-            border-left-color: #dc3545 !important;
-        }
-
-        .priority-medium {
-            border-left-color: #ffc107 !important;
-        }
-
-        .priority-low {
-            border-left-color: #28a745 !important;
-        }
-
-        .rating-stars {
-            color: #ffc107;
-            font-size: 16px;
-            margin: 5px 0;
-        }
-
-        .feedback-section {
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-        }
-
-        .feedback-item {
-            background: white;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            border-left: 3px solid #667eea;
-        }
-
-        .swipe-actions {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .swipe-content {
-            transition: transform 0.3s ease;
-        }
-
-        .swipe-actions-right {
-            position: absolute;
-            right: 0;
-            top: 0;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 0 15px;
-        }
-
-        .map-container {
-            height: 200px;
-            background: #f0f0f0;
-            border-radius: 8px;
-            margin: 15px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #666;
-            font-size: 14px;
-        }
-
-        .distance-badge {
-            background: #e3f2fd;
-            color: #1976d2;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-left: 10px;
-        }
-
-        .fuel-tracker {
-            background: #fff3e0;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-        }
-
-        .fuel-level {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .fuel-bar {
-            flex: 1;
-            height: 8px;
-            background: #eeeeee;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .fuel-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb);
-            transition: width 0.3s ease;
-        }
-
-        .maintenance-alerts {
-            background: #ffebee;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-        }
-
-        .alert-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .alert-icon {
-            color: #f44336;
-            font-size: 16px;
-        }
-
-        .driver-profile {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 15px;
-            background: white;
-            border-radius: 12px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        .profile-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
+        .stats-overview {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
             color: white;
-            font-size: 24px;
-            font-weight: bold;
-        }
-
-        .profile-info h3 {
-            margin-bottom: 5px;
-            color: #333;
-        }
-
-        .profile-info p {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 3px;
-        }
-
-        .backup-status {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 15px;
-            background: #e8f5e8;
-            color: #2e7d32;
-            border-radius: 8px;
-            font-size: 14px;
+            padding: 20px;
+            border-radius: 12px;
             margin-bottom: 20px;
         }
 
-        .sync-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #4caf50;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-
-        .emergency-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
-            background: #f44336;
-            border: none;
-            border-radius: 50%;
-            color: white;
-            font-size: 18px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
-            z-index: 1000;
-            transition: all 0.2s;
-        }
-
-        .emergency-button:hover {
-            transform: scale(1.1);
-            background: #d32f2f;
-        }
-
-        .dark-mode {
-            background: #1a1a1a;
-            color: #ffffff;
-        }
-
-        .dark-mode .container {
-            background: #2d2d2d;
-        }
-
-        .dark-mode .modal-content {
-            background: #3d3d3d;
-            color: #ffffff;
-        }
-
-        .dark-mode .form-group input,
-        .dark-mode .form-group select,
-        .dark-mode .form-group textarea {
-            background: #4d4d4d;
-            border-color: #555;
-            color: #ffffff;
-        }
-
-        .dark-mode .ride-item {
-            background: #3d3d3d;
-            color: #ffffff;
-        }
-
-        .settings-panel {
-            position: fixed;
-            top: 0;
-            right: -300px;
-            width: 300px;
-            height: 100vh;
-            background: white;
-            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
-            transition: right 0.3s ease;
-            z-index: 1001;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .settings-panel.open {
-            right: 0;
-        }
-
-        .settings-item {
+        .stats-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 15px 0;
-            border-bottom: 1px solid #eee;
+            margin-bottom: 15px;
         }
 
-        .toggle-switch {
-            position: relative;
-            width: 50px;
-            height: 25px;
-            background: #ccc;
-            border-radius: 25px;
-            cursor: pointer;
-            transition: background 0.3s;
+        .stats-row:last-child {
+            margin-bottom: 0;
         }
 
-        .toggle-switch.active {
-            background: #667eea;
-        }
-
-        .toggle-knob {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 21px;
-            height: 21px;
-            background: white;
-            border-radius: 50%;
-            transition: transform 0.3s;
-        }
-
-        .toggle-switch.active .toggle-knob {
-            transform: translateX(25px);
-        }
-
-        .offline-banner {
-            background: #ff9800;
-            color: white;
-            padding: 10px;
+        .stat-item {
             text-align: center;
-            font-size: 14px;
+            flex: 1;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .settings-overlay {
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            z-index: 1002;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
             display: none;
         }
 
-        .voice-command-btn {
+        .settings-overlay.open {
+            display: block;
+        }
+
+        @media (max-width: 480px) {
+            .ride-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .modal-content {
+                margin: 10% auto;
+                width: 95%;
+            }
+            
+            .customer-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            }
+
+            .settings-panel {
+                width: 100%;
+            }
+        }
+
+        .custom-alert-modal {
+            display: none;
             position: fixed;
-            bottom: 150px;
-            left: 20px;
-            width: 50px;
-            height: 50px;
-            background: #9c27b0;
-            border: none;
-            border-radius: 50%;
-            color: white;
-            font-size: 18px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(156, 39, 176, 0.3);
-            z-index: 100;
-            transition: all 0.2s;
-        }
-
-        .voice-command-btn:hover {
-            transform: scale(1.1);
-        }
-
-        .voice-command-btn.listening {
-            background: #e91e63;
-            animation: pulse 1s infinite;
-        }
-
-        .route-optimization {
-            background: #e1f5fe;
-            padding: 15px;
-            border-radius: 8px;
-            margin: 15px 0;
-        }
-
-        .route-suggestion {
-            display: flex;
-            justify-content: space-between;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.6);
+            backdrop-filter: blur(8px);
+            justify-content: center;
             align-items: center;
-            margin-bottom: 10px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
         }
 
-        .route-info {
-            flex: 1;
+        .custom-alert-modal.show {
+            display: flex;
+            opacity: 1;
         }
 
-        .route-time {
-            font-weight: bold;
-            color: #0277bd;
+        .custom-alert-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transform: translateY(-20px);
+            transition: transform 0.3s ease;
         }
 
-        .route-distance {
-            font-size: 12px;
+        .custom-alert-modal.show .custom-alert-content {
+            transform: translateY(0);
+        }
+
+        .custom-alert-content h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+
+        .custom-alert-content p {
             color: #666;
+            margin-bottom: 25px;
+            font-size: 15px;
         }
 
-        .accept-route-btn {
-            background: #4caf50;
-            color: white;
+        .custom-alert-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .custom-alert-btn {
+            padding: 10px 20px;
             border: none;
-            padding: 8px 15px;
-            border-radius: 6px;
-            font-size: 12px;
+            border-radius: 8px;
+            font-size: 16px;
             cursor: pointer;
+            transition: background 0.2s, transform 0.2s;
+        }
+
+        .custom-alert-btn.confirm {
+            background: #28a745;
+            color: white;
+        }
+
+        .custom-alert-btn.cancel {
+            background: #dc3545;
+            color: white;
+        }
+
+        .custom-alert-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        body.dark-mode .custom-alert-content {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        body.dark-mode .custom-alert-content h3 {
+            color: #e2e8f0;
+        }
+        body.dark-mode .custom-alert-content p {
+            color: #a0aec0;
         }
     </style>
 </head>
 <body>
+
+    <!-- Custom Alert/Confirm Modal Structure -->
+    <div id="customAlertModal" class="custom-alert-modal">
+        <div class="custom-alert-content">
+            <h3 id="customAlertTitle"></h3>
+            <p id="customAlertMessage"></p>
+            <div class="custom-alert-buttons">
+                <button id="customAlertConfirmBtn" class="custom-alert-btn confirm">OK</button>
+                <button id="customAlertCancelBtn" class="custom-alert-btn cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <div class="offline-banner" id="offlineBanner">
         📡 You're offline. Data will sync when connection is restored.
     </div>
 
+    <!-- Settings Panel Overlay -->
+    <div id="settingsOverlay" class="settings-overlay" onclick="closeSettings()"></div>
+
     <div class="container">
         <!-- Emergency Button -->
-        <button class="emergency-button" onclick="triggerEmergency()" title="Emergency">
+        <button class="emergency-button" onclick="triggerEmergency()" title="Emergency" style="top: 150px;">
             🚨
         </button>
 
@@ -1284,68 +1778,32 @@
                 <span>All data synced and backed up locally</span>
             </div>
 
-            <!-- Weather Widget -->
-            <div class="weather-widget" id="weatherWidget">
-                <div class="weather-temp">75°F</div>
-                <div class="weather-desc">⛅ Partly Cloudy - Perfect driving weather</div>
-            </div>
-
             <!-- Earnings Summary -->
             <div class="earnings-summary">
-                <div class="earnings-today" id="earningsToday">$127.50</div>
+                <div class="earnings-today" id="earningsToday">$0.00</div>
                 <div class="earnings-label">Today's Earnings</div>
+                <button class="btn-small btn-edit" onclick="showResetEarningsModal()" style="position: absolute; top: 10px; right: 10px; background: #ff6b6b; color: white;" title="Reset Earnings">
+                    🔄 Reset
+                </button>
             </div>
 
-            <!-- Fuel Tracker -->
-            <div class="fuel-tracker">
-                <div class="fuel-level">
-                    <span>⛽ Fuel Level:</span>
-                    <div class="fuel-bar">
-                        <div class="fuel-fill" style="width: 75%"></div>
-                    </div>
-                    <span>75%</span>
-                </div>
-                <p style="font-size: 12px; color: #666;">~200 miles remaining</p>
-            </div>
+            <!-- PLACE PART 4 CODE HERE -->
 
-            <!-- Maintenance Alerts -->
-            <div class="maintenance-alerts" id="maintenanceAlerts">
-                <h4>🔧 Maintenance Reminders</h4>
-                <div class="alert-item">
-                    <span class="alert-icon">⚠️</span>
-                    <span>Oil change due in 500 miles</span>
-                </div>
-                <div class="alert-item">
-                    <span class="alert-icon">🔍</span>
-                    <span>Inspection due next month</span>
-                </div>
-            </div>
 
-            <!-- Route Optimization -->
-            <div class="route-optimization" id="routeOptimization">
-                <h4>🗺️ Optimal Route Suggestion</h4>
-                <div class="route-suggestion">
-                    <div class="route-info">
-                        <div class="route-time">25 min route</div>
-                        <div class="route-distance">12.3 miles via I-95</div>
-                    </div>
-                    <button class="accept-route-btn" onclick="acceptRoute()">Accept</button>
-                </div>
-            </div>
 
-            <!-- Ride Cards -->
+<!-- Ride Cards -->
             <div class="ride-cards">
                 <div class="ride-card today" onclick="showTodaysRides()">
                     <span class="ride-card-icon">📅</span>
                     <h3>TODAY'S</h3>
                     <p>RIDES</p>
-                    <div class="notification-badge" id="todaysBadge">3</div>
+                    <div class="notification-badge" id="todaysBadge">0</div>
                 </div>
                 <div class="ride-card tomorrow" onclick="showTomorrowsRides()">
                     <span class="ride-card-icon">📆</span>
                     <h3>TOMORROW'S</h3>
                     <p>RIDES</p>
-                    <div class="notification-badge" id="tomorrowsBadge">5</div>
+                    <div class="notification-badge" id="tomorrowsBadge">0</div>
                 </div>
                 <div class="ride-card future" onclick="showFutureRides()">
                     <span class="ride-card-icon">🔮</span>
@@ -1368,16 +1826,16 @@
                     📤 Export Data for Spreadsheet
                 </button>
             </div>
-        </div>
 
-        <!-- Floating Action Buttons -->
-        <div class="quick-actions">
-            <button class="quick-action customers" onclick="showCustomers()" title="Customers">
-                👥
-            </button>
-            <button class="quick-action analytics" onclick="showAnalytics()" title="Analytics">
-                📊
-            </button>
+            <!-- Navigation Buttons -->
+            <div class="nav-buttons">
+                <button class="nav-btn active" onclick="showHome()">🏠 Home</button>
+                <button class="nav-btn" onclick="showToday()">📅 Today</button>
+                <button class="nav-btn" onclick="showTomorrow()">📆 Tomorrow</button>
+                <button class="nav-btn" onclick="showFuture()">🔮 Future</button>
+                <button class="nav-btn" onclick="showAnalytics()">📊 Analytics</button>
+                <button class="nav-btn" onclick="showCustomers()">👥 Customers</button>
+            </div>
         </div>
 
         <!-- Voice Command Button -->
@@ -1389,33 +1847,83 @@
         <button class="floating-add" onclick="showAddRideModal()" title="Add New Ride">
             ➕
         </button>
+    </div>
 
-        <!-- Bottom Navigation -->
-        <div class="bottom-nav">
-            <a href="#" class="nav-item active" onclick="showHome()">
-                <span class="nav-item-icon">🏠</span>
-                <span>Home</span>
-            </a>
-            <a href="#" class="nav-item" onclick="showToday()">
-                <span class="nav-item-icon">📅</span>
-                <span>Today</span>
-            </a>
-            <a href="#" class="nav-item" onclick="showTomorrow()">
-                <span class="nav-item-icon">📆</span>
-                <span>Tomorrow</span>
-            </a>
-            <a href="#" class="nav-item" onclick="showFuture()">
-                <span class="nav-item-icon">🔮</span>
-                <span>Future</span>
-            </a>
-            <a href="#" class="nav-item" onclick="showAnalytics()">
-                <span class="nav-item-icon">📊</span>
-                <span>Analytics</span>
-            </a>
-            <a href="#" class="nav-item" onclick="showCustomers()">
-                <span class="nav-item-icon">👥</span>
-                <span>Customers</span>
-            </a>
+    <!-- Reset Earnings Modal -->
+    <div id="resetEarningsModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('resetEarningsModal')">&times;</span>
+            <h2>🔄 Reset Earnings</h2>
+            <p style="color: #666; margin-bottom: 20px;">Choose how you want to reset your earnings:</p>
+            
+            <div class="export-options">
+                <div class="export-card" onclick="resetDisplayOnly()">
+                    <div class="export-icon">📊</div>
+                    <h3>Reset Display Only</h3>
+                    <p>Reset the displayed amount to $0.00 but keep all your ride data intact. Use this to fix the display baseline.</p>
+                </div>
+                <div class="export-card" onclick="resetAllEarnings()">
+                    <div class="export-icon">🗑️</div>
+                    <h3>Reset All Earnings</h3>
+                    <p><strong style="color: #d32f2f;">⚠️ PERMANENT:</strong> This will erase all earnings data and completed rides from the system.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="editProfileModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('editProfileModal')">&times;</span>
+            <h2>✏️ Edit Driver Profile</h2>
+            <form id="editProfileForm" onsubmit="updateDriverProfile(event)">
+                <div class="form-group">
+                    <label for="profileName">Driver Name:</label>
+                    <input type="text" id="profileName" required placeholder="Enter your full name">
+                </div>
+                <div class="form-group">
+                    <label for="profilePhone">Phone Number:</label>
+                    <input type="tel" id="profilePhone" required placeholder="+1 (555) 123-4567">
+                </div>
+                <div class="form-group">
+                    <label for="profileEmail">Email Address:</label>
+                    <input type="email" id="profileEmail" placeholder="your.email@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="profileVehicleMake">Vehicle Make & Model:</label>
+                    <input type="text" id="profileVehicleMake" required placeholder="Toyota Camry">
+                </div>
+                <div class="form-group">
+                    <label for="profileLicensePlate">License Plate:</label>
+                    <input type="text" id="profileLicensePlate" required placeholder="ABC123">
+                </div>
+                <div class="form-group">
+                    <label for="profileLicenseNumber">Driver's License Number:</label>
+                    <input type="text" id="profileLicenseNumber" placeholder="D1234567890">
+                </div>
+                <div class="form-group">
+                    <label for="profileInsurance">Insurance Company:</label>
+                    <input type="text" id="profileInsurance" placeholder="State Farm, Geico, etc.">
+                </div>
+                <div class="form-group">
+                    <label for="profileEmergencyContact">Emergency Contact:</label>
+                    <input type="text" id="profileEmergencyContact" placeholder="Name and phone number">
+                </div>
+                <div class="form-group">
+                    <label for="profilePhoto">Profile Photo:</label>
+                    <div class="photo-upload" onclick="document.getElementById('profilePhotoInput').click()">
+                        <input type="file" id="profilePhotoInput" accept="image/*" style="display: none;" onchange="handleProfilePhotoUpload(event)">
+                        <p>📷 Tap to update profile photo</p>
+                        <img id="profilePhotoPreview" class="photo-preview" style="display: none;">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
+                    ✅ Save Profile
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="resetToDefaults()" style="width: 100%; margin-top: 10px;">
+                    🔄 Reset to Defaults
+                </button>
+            </form>
         </div>
     </div>
 
@@ -1502,15 +2010,22 @@
                 <div class="filter-tab" onclick="filterRidesByStatus('scheduled')">Scheduled</div>
                 <div class="filter-tab" onclick="filterRidesByStatus('in-progress')">In Progress</div>
                 <div class="filter-tab" onclick="filterRidesByStatus('completed')">Completed</div>
+                <div class="filter-tab" onclick="filterRidesByStatus('cancelled')">Cancelled</div>
             </div>
 
             <div class="ride-list" id="ridesList">
-                <!-- Rides will be populated here -->
+                <!-- Rides will be populated here by JavaScript -->
             </div>
         </div>
     </div>
 
-    <!-- Analytics Modal -->
+
+
+
+
+
+    <!-- PLACE PART 5 CODE HERE -->
+<!-- Analytics Modal -->
     <div id="analyticsModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('analyticsModal')">&times;</span>
@@ -1520,11 +2035,11 @@
             <div class="stats-overview">
                 <div class="stats-row">
                     <div class="stat-item">
-                        <span class="stat-value" id="totalRides">127</span>
+                        <span class="stat-value" id="totalRides">0</span>
                         <span class="stat-label">Total Rides</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-value" id="totalEarnings">$3,240</span>
+                        <span class="stat-value" id="totalEarnings">$0.00</span>
                         <span class="stat-label">Total Earnings</span>
                     </div>
                     <div class="stat-item">
@@ -1534,15 +2049,15 @@
                 </div>
                 <div class="stats-row">
                     <div class="stat-item">
-                        <span class="stat-value" id="repeatCustomers">34</span>
+                        <span class="stat-value" id="repeatCustomers">0</span>
                         <span class="stat-label">Repeat Customers</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-value" id="thisWeekRides">23</span>
+                        <span class="stat-value" id="thisWeekRides">0</span>
                         <span class="stat-label">This Week</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-value" id="avgPrice">$25.50</span>
+                        <span class="stat-value" id="avgPrice">$0.00</span>
                         <span class="stat-label">Avg Price</span>
                     </div>
                 </div>
@@ -1551,15 +2066,15 @@
             <!-- Analytics Cards -->
             <div class="analytics-grid">
                 <div class="analytics-card">
-                    <div class="analytics-value" id="todayRides">8</div>
+                    <div class="analytics-value" id="todayRides">0</div>
                     <div class="analytics-label">Today's Rides</div>
                 </div>
                 <div class="analytics-card">
-                    <div class="analytics-value" id="weeklyEarnings">$680</div>
+                    <div class="analytics-value" id="weeklyEarnings">$0.00</div>
                     <div class="analytics-label">This Week</div>
                 </div>
                 <div class="analytics-card">
-                    <div class="analytics-value" id="monthlyRides">89</div>
+                    <div class="analytics-value" id="monthlyRides">0</div>
                     <div class="analytics-label">This Month</div>
                 </div>
                 <div class="analytics-card">
@@ -1622,7 +2137,7 @@
             </div>
 
             <div class="customer-grid" id="customersGrid">
-                <!-- Customers will be populated here -->
+                <!-- Customers will be populated here by JavaScript -->
             </div>
         </div>
     </div>
@@ -1634,7 +2149,7 @@
             <h2 id="customerDetailsTitle">👤 Customer Details</h2>
             
             <div id="customerDetailsContent">
-                <!-- Customer details will be populated here -->
+                <!-- Customer details will be populated here by JavaScript -->
             </div>
 
             <!-- Communication Buttons -->
@@ -1657,7 +2172,7 @@
             <div class="chart-container">
                 <h3>🚗 Ride History</h3>
                 <div id="customerRideHistory">
-                    <!-- Ride history will be populated here -->
+                    <!-- Ride history will be populated here by JavaScript -->
                 </div>
             </div>
         </div>
@@ -1694,67 +2209,11 @@
         </div>
     </div>
 
-    <!-- Edit Profile Modal -->
-    <div id="editProfileModal" class="modal">
-        <div class="modal-content">
-            <span class="close" onclick="closeModal('editProfileModal')">&times;</span>
-            <h2>✏️ Edit Driver Profile</h2>
-            <form id="editProfileForm" onsubmit="updateDriverProfile(event)">
-                <div class="form-group">
-                    <label for="profileName">Driver Name:</label>
-                    <input type="text" id="profileName" required placeholder="Enter your full name">
-                </div>
-                <div class="form-group">
-                    <label for="profilePhone">Phone Number:</label>
-                    <input type="tel" id="profilePhone" required placeholder="+1 (555) 123-4567">
-                </div>
-                <div class="form-group">
-                    <label for="profileEmail">Email Address:</label>
-                    <input type="email" id="profileEmail" placeholder="your.email@example.com">
-                </div>
-                <div class="form-group">
-                    <label for="profileVehicleMake">Vehicle Make & Model:</label>
-                    <input type="text" id="profileVehicleMake" required placeholder="Toyota Camry">
-                </div>
-                <div class="form-group">
-                    <label for="profileLicensePlate">License Plate:</label>
-                    <input type="text" id="profileLicensePlate" required placeholder="ABC123">
-                </div>
-                <div class="form-group">
-                    <label for="profileLicenseNumber">Driver's License Number:</label>
-                    <input type="text" id="profileLicenseNumber" placeholder="D1234567890">
-                </div>
-                <div class="form-group">
-                    <label for="profileInsurance">Insurance Company:</label>
-                    <input type="text" id="profileInsurance" placeholder="State Farm, Geico, etc.">
-                </div>
-                <div class="form-group">
-                    <label for="profileEmergencyContact">Emergency Contact:</label>
-                    <input type="text" id="profileEmergencyContact" placeholder="Name and phone number">
-                </div>
-                <div class="form-group">
-                    <label for="profilePhoto">Profile Photo:</label>
-                    <div class="photo-upload" onclick="document.getElementById('profilePhotoInput').click()">
-                        <input type="file" id="profilePhotoInput" accept="image/*" style="display: none;" onchange="handleProfilePhotoUpload(event)">
-                        <p>📷 Tap to update profile photo</p>
-                        <img id="profilePhotoPreview" class="photo-preview" style="display: none;">
-                    </div>
-                </div>
-                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
-                    ✅ Save Profile
-                </button>
-                <button type="button" class="btn btn-secondary" onclick="resetToDefaults()" style="width: 100%; margin-top: 10px;">
-                    🔄 Reset to Defaults
-                </button>
-            </form>
-        </div>
-    </div>
-
     <!-- Settings Panel -->
     <div id="settingsPanel" class="settings-panel">
         <h2>⚙️ Settings</h2>
         
-        <div class="settings-item" onclick="showEditProfileModal()" style="cursor: pointer;">
+        <div class="settings-item" onclick="showEditProfileModal(); closeSettings();" style="cursor: pointer;">
             <span>👤 Edit Driver Profile</span>
             <span style="color: #667eea;">✏️</span>
         </div>
@@ -1800,7 +2259,7 @@
     </div>
 
     <script>
-        // Global variables
+        // --- Global Variables ---
         let rides = [];
         let customers = [];
         let analytics = {};
@@ -1808,6 +2267,7 @@
         let isVoiceListening = false;
         let currentFilter = 'all';
         let isDarkMode = false;
+        let dailyEarningsOffset = 0;
         let driverProfile = {
             name: 'John Driver',
             phone: '+1 (555) 123-4567',
@@ -1821,220 +2281,187 @@
             rating: 4.8
         };
 
-        // Initialize app
+        // --- Utility Functions for Custom Modals ---
+        function showAlert(title, message) {
+            const modal = document.getElementById('customAlertModal');
+            document.getElementById('customAlertTitle').textContent = title;
+            document.getElementById('customAlertMessage').textContent = message;
+            document.getElementById('customAlertConfirmBtn').style.display = 'block';
+            document.getElementById('customAlertCancelBtn').style.display = 'none';
+            modal.classList.add('show');
+
+            return new Promise(resolve => {
+                document.getElementById('customAlertConfirmBtn').onclick = () => {
+                    modal.classList.remove('show');
+                    resolve(true);
+                };
+            });
+        }
+
+        function showConfirm(title, message) {
+            const modal = document.getElementById('customAlertModal');
+            document.getElementById('customAlertTitle').textContent = title;
+            document.getElementById('customAlertMessage').textContent = message;
+            document.getElementById('customAlertConfirmBtn').style.display = 'block';
+            document.getElementById('customAlertCancelBtn').style.display = 'block';
+            modal.classList.add('show');
+
+            return new Promise(resolve => {
+                document.getElementById('customAlertConfirmBtn').onclick = () => {
+                    modal.classList.remove('show');
+                    resolve(true);
+                };
+                document.getElementById('customAlertCancelBtn').onclick = () => {
+                    modal.classList.remove('show');
+                    resolve(false);
+                };
+            });
+        }
+
+        // --- App Initialization ---
         document.addEventListener('DOMContentLoaded', function() {
             initializeApp();
             loadSampleData();
             updateAnalytics();
             setTodaysDate();
             checkOfflineStatus();
-            updateWeather();
         });
 
-        // Initialize app with sample data and settings
         function initializeApp() {
             console.log('KTransport360 Driver App initialized successfully!');
             
-            // Load settings from localStorage
             isDarkMode = localStorage.getItem('darkMode') === 'true';
             if (isDarkMode) {
                 document.body.classList.add('dark-mode');
+                const darkModeToggle = document.querySelector('.settings-panel .toggle-switch');
+                if (darkModeToggle) {
+                    darkModeToggle.classList.add('active');
+                }
             }
 
-            // Load driver profile from localStorage
             loadDriverProfile();
             updateDriverProfileDisplay();
 
-            // Set default date to today
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('rideDate').value = today;
+            const savedOffset = localStorage.getItem('ktransport360_earningsOffset');
+            if (savedOffset) {
+                dailyEarningsOffset = parseFloat(savedOffset);
+            }
 
-            // Initialize notification badges
+            setTodaysDate();
             updateNotificationBadges();
         }
 
-        // Load sample data for demonstration
+        // --- Data Loading and Saving ---
         function loadSampleData() {
-            rides = [
-                {
-                    id: 1,
-                    customerName: 'Sarah Johnson',
-                    customerPhone: '+1 (555) 123-4567',
-                    customerEmail: 'sarah.j@email.com',
-                    pickupLocation: '123 Main St, Downtown',
-                    dropoffLocation: 'Airport Terminal A',
-                    date: '2025-06-11',
-                    time: '14:30',
-                    price: 45.00,
-                    status: 'scheduled',
-                    priority: 'high',
-                    notes: 'Flight at 6 PM - needs to be on time',
-                    rating: 5,
-                    feedback: 'Excellent service!',
-                    distance: '12.5 miles',
-                    duration: '25 minutes'
-                },
-                {
-                    id: 2,
-                    customerName: 'Mike Rodriguez',
-                    customerPhone: '+1 (555) 987-6543',
-                    customerEmail: 'mike.r@email.com',
-                    pickupLocation: '456 Oak Avenue, Suburbs',
-                    dropoffLocation: 'City Medical Center',
-                    date: '2025-06-11',
-                    time: '16:00',
-                    price: 28.50,
-                    status: 'scheduled',
-                    priority: 'medium',
-                    notes: 'Doctor appointment - patient has mobility issues',
-                    rating: 5,
-                    feedback: 'Very helpful and patient driver',
-                    distance: '8.2 miles',
-                    duration: '18 minutes'
-                },
-                {
-                    id: 3,
-                    customerName: 'Jennifer Lee',
-                    customerPhone: '+1 (555) 555-0123',
-                    customerEmail: 'jenny.lee@email.com',
-                    pickupLocation: '789 Pine Street, Midtown',
-                    dropoffLocation: 'Shopping Mall Plaza',
-                    date: '2025-06-11',
-                    time: '18:45',
-                    price: 22.00,
-                    status: 'scheduled',
-                    priority: 'low',
-                    notes: 'Shopping trip - multiple stops possible',
-                    rating: 4,
-                    feedback: 'Good service, clean vehicle',
-                    distance: '6.7 miles',
-                    duration: '15 minutes'
-                },
-                {
-                    id: 4,
-                    customerName: 'Robert Chen',
-                    customerPhone: '+1 (555) 444-7890',
-                    customerEmail: 'robert.c@email.com',
-                    pickupLocation: 'Business District Plaza',
-                    dropoffLocation: '321 Elm Street, Residential',
-                    date: '2025-06-12',
-                    time: '09:15',
-                    price: 35.00,
-                    status: 'scheduled',
-                    priority: 'medium',
-                    notes: 'Business meeting pickup - formal attire',
-                    rating: 5,
-                    feedback: 'Professional and punctual',
-                    distance: '10.3 miles',
-                    duration: '22 minutes'
-                },
-                {
-                    id: 5,
-                    customerName: 'Emily Davis',
-                    customerPhone: '+1 (555) 321-0987',
-                    customerEmail: 'emily.d@email.com',
-                    pickupLocation: 'University Campus, Building A',
-                    dropoffLocation: 'Train Station Central',
-                    date: '2025-06-12',
-                    time: '11:30',
-                    price: 18.50,
-                    status: 'scheduled',
-                    priority: 'low',
-                    notes: 'Student - heading home for weekend',
-                    rating: 5,
-                    feedback: 'Friendly driver, good music',
-                    distance: '5.1 miles',
-                    duration: '12 minutes'
-                }
-            ];
+            const savedRides = localStorage.getItem('ktransport360_rides');
+            const savedCustomers = localStorage.getItem('ktransport360_customers');
 
-            customers = [
-                {
-                    id: 1,
-                    name: 'Sarah Johnson',
-                    phone: '+1 (555) 123-4567',
-                    email: 'sarah.j@email.com',
-                    totalRides: 12,
-                    totalSpent: 540.00,
-                    avgRating: 5.0,
-                    isVIP: true,
-                    lastRide: '2025-06-11',
-                    preferredLocations: ['Airport Terminal A', 'Downtown Office'],
-                    notes: 'Frequent business traveler - always tips well'
-                },
-                {
-                    id: 2,
-                    name: 'Mike Rodriguez',
-                    phone: '+1 (555) 987-6543',
-                    email: 'mike.r@email.com',
-                    totalRides: 8,
-                    totalSpent: 280.00,
-                    avgRating: 4.8,
-                    isVIP: false,
-                    lastRide: '2025-06-11',
-                    preferredLocations: ['City Medical Center'],
-                    notes: 'Elderly customer - needs assistance with mobility'
-                },
-                {
-                    id: 3,
-                    name: 'Jennifer Lee',
-                    phone: '+1 (555) 555-0123',
-                    email: 'jenny.lee@email.com',
-                    totalRides: 15,
-                    totalSpent: 425.00,
-                    avgRating: 4.6,
-                    isVIP: true,
-                    lastRide: '2025-06-11',
-                    preferredLocations: ['Shopping Mall Plaza', 'Grocery Store'],
-                    notes: 'Regular weekend shopper - likes to chat'
-                }
-            ];
+            if (savedRides) {
+                rides = JSON.parse(savedRides);
+            } else {
+                rides = [];
+                saveRides();
+            }
 
-            console.log('Sample data loaded successfully');
+            if (savedCustomers) {
+                customers = JSON.parse(savedCustomers);
+            } else {
+                customers = [];
+                saveCustomers();
+            }
+            console.log('Data loaded successfully');
         }
 
-        // Set today's date in forms
+        function saveRides() {
+            localStorage.setItem('ktransport360_rides', JSON.stringify(rides));
+        }
+
+        function saveCustomers() {
+            localStorage.setItem('ktransport360_customers', JSON.stringify(customers));
+        }
+
+        function loadDriverProfile() {
+            const savedProfile = localStorage.getItem('ktransport360_driverProfile');
+            if (savedProfile) {
+                driverProfile = JSON.parse(savedProfile);
+            }
+        }
+
+        function saveDriverProfile() {
+            localStorage.setItem('ktransport360_driverProfile', JSON.stringify(driverProfile));
+        }
+
+        // --- UI Updates ---
+        function updateDriverProfileDisplay() {
+            document.getElementById('driverAvatar').textContent = driverProfile.name.split(' ').map(n => n[0]).join('');
+            document.getElementById('driverName').textContent = driverProfile.name;
+            document.getElementById('driverPhone').textContent = `📞 ${driverProfile.phone}`;
+            document.getElementById('driverVehicle').textContent = `🚗 ${driverProfile.vehicleMake} - ${driverProfile.licensePlate}`;
+            document.getElementById('driverRating').innerHTML = `⭐⭐⭐⭐⭐ ${driverProfile.rating}`;
+        }
+
         function setTodaysDate() {
             const today = new Date().toISOString().split('T')[0];
             const dateInput = document.getElementById('rideDate');
             if (dateInput) {
                 dateInput.value = today;
-                dateInput.min = today; // Prevent selecting past dates
+                dateInput.min = today;
             }
         }
 
-        // Update notification badges
         function updateNotificationBadges() {
             const today = new Date().toISOString().split('T')[0];
             const tomorrow = new Date();
             tomorrow.setDate(tomorrow.getDate() + 1);
             const tomorrowStr = tomorrow.toISOString().split('T')[0];
 
-            const todaysRides = rides.filter(ride => ride.date === today && ride.status === 'scheduled').length;
-            const tomorrowsRides = rides.filter(ride => ride.date === tomorrowStr && ride.status === 'scheduled').length;
+            const todaysRidesCount = rides.filter(ride => ride.date === today && ride.status === 'scheduled').length;
+            const tomorrowsRidesCount = rides.filter(ride => ride.date === tomorrowStr && ride.status === 'scheduled').length;
 
             const todaysBadge = document.getElementById('todaysBadge');
             const tomorrowsBadge = document.getElementById('tomorrowsBadge');
 
-            if (todaysRides > 0) {
-                todaysBadge.textContent = todaysRides;
+            if (todaysRidesCount > 0) {
+                todaysBadge.textContent = todaysRidesCount;
                 todaysBadge.style.display = 'flex';
             } else {
                 todaysBadge.style.display = 'none';
             }
 
-            if (tomorrowsRides > 0) {
-                tomorrowsBadge.textContent = tomorrowsRides;
+            if (tomorrowsRidesCount > 0) {
+                tomorrowsBadge.textContent = tomorrowsRidesCount;
                 tomorrowsBadge.style.display = 'flex';
             } else {
                 tomorrowsBadge.style.display = 'none';
             }
         }
 
-        // Navigation functions
+        function showSuccessMessage(message) {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'success-message';
+            successDiv.textContent = message;
+            document.body.appendChild(successDiv);
+            setTimeout(() => {
+                successDiv.remove();
+            }, 4000);
+        }
+
+        function showErrorMessage(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.textContent = message;
+            document.body.appendChild(errorDiv);
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 4000);
+        }
+
+        // PLACE PART 6 CODE HERE -->
+
+
+// --- Navigation Functions ---
         function showHome() {
             setActiveNav(0);
-            // Show home view
         }
 
         function showToday() {
@@ -2052,8 +2479,22 @@
             showFutureRides();
         }
 
+        function showAnalytics() {
+            setActiveNav(4);
+            updateAnalytics();
+            document.getElementById('analyticsModal').classList.add('open');
+            drawPerformanceChart();
+            displayTopCustomers();
+        }
+
+        function showCustomers() {
+            setActiveNav(5);
+            displayCustomers(customers);
+            document.getElementById('customersModal').classList.add('open');
+        }
+
         function setActiveNav(index) {
-            const navItems = document.querySelectorAll('.nav-item');
+            const navItems = document.querySelectorAll('.bottom-nav .nav-item');
             navItems.forEach((item, i) => {
                 if (i === index) {
                     item.classList.add('active');
@@ -2063,16 +2504,14 @@
             });
         }
 
-        // Modal functions
-        function showAddRideModal() {
-            document.getElementById('addRideModal').style.display = 'block';
-            setTodaysDate();
-        }
-
         function showTodaysRides() {
             const today = new Date().toISOString().split('T')[0];
             const todaysRides = rides.filter(ride => ride.date === today);
-            showRidesModal('📅 Today\'s Rides', todaysRides);
+            document.getElementById('ridesModalTitle').textContent = "📅 Today's Rides";
+            displayRides(todaysRides);
+            document.getElementById('ridesModal').classList.add('open');
+            currentFilter = 'all';
+            resetFilterTabs();
         }
 
         function showTomorrowsRides() {
@@ -2080,21 +2519,426 @@
             tomorrow.setDate(tomorrow.getDate() + 1);
             const tomorrowStr = tomorrow.toISOString().split('T')[0];
             const tomorrowsRides = rides.filter(ride => ride.date === tomorrowStr);
-            showRidesModal('📆 Tomorrow\'s Rides', tomorrowsRides);
+            document.getElementById('ridesModalTitle').textContent = "📆 Tomorrow's Rides";
+            displayRides(tomorrowsRides);
+            document.getElementById('ridesModal').classList.add('open');
+            currentFilter = 'all';
+            resetFilterTabs();
         }
 
         function showFutureRides() {
-            const today = new Date();
             const dayAfterTomorrow = new Date();
-            dayAfterTomorrow.setDate(today.getDate() + 2);
+            dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
             const futureRides = rides.filter(ride => new Date(ride.date) >= dayAfterTomorrow);
-            showRidesModal('🔮 Future Rides', futureRides);
+            document.getElementById('ridesModalTitle').textContent = "🔮 Future Rides";
+            displayRides(futureRides);
+            document.getElementById('ridesModal').classList.add('open');
+            currentFilter = 'all';
+            resetFilterTabs();
         }
 
-        function showRidesModal(title, ridesToShow) {
-            document.getElementById('ridesModalTitle').textContent = title;
-            displayRides(ridesToShow);
-            document.getElementById('ridesModal').style.display = 'block';
+        function showAddRideModal() {
+            showModal('addRideModal');
+        }
+
+        function resetFilterTabs() {
+            const filterTabs = document.querySelectorAll('.filter-tabs .filter-tab');
+            filterTabs.forEach(tab => {
+                if (tab.textContent.toLowerCase().includes('all')) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+        }
+
+        // --- Modal Control Functions ---
+        function showModal(modalId) {
+            document.getElementById(modalId).classList.add('open');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('open');
+            if (modalId === 'addRideModal') {
+                document.getElementById('addRideForm').reset();
+                document.getElementById('photoPreview').style.display = 'none';
+                document.getElementById('addRideForm').onsubmit = addRide;
+            } else if (modalId === 'editProfileModal') {
+                document.getElementById('editProfileForm').reset();
+                document.getElementById('profilePhotoPreview').style.display = 'none';
+            }
+        }
+
+        // --- Driver Profile Management ---
+        function showEditProfileModal() {
+            document.getElementById('profileName').value = driverProfile.name;
+            document.getElementById('profilePhone').value = driverProfile.phone;
+            document.getElementById('profileEmail').value = driverProfile.email;
+            document.getElementById('profileVehicleMake').value = driverProfile.vehicleMake;
+            document.getElementById('profileLicensePlate').value = driverProfile.licensePlate;
+            document.getElementById('profileLicenseNumber').value = driverProfile.licenseNumber;
+            document.getElementById('profileInsurance').value = driverProfile.insurance;
+            document.getElementById('profileEmergencyContact').value = driverProfile.emergencyContact;
+
+            const profilePhotoPreview = document.getElementById('profilePhotoPreview');
+            if (driverProfile.photo) {
+                profilePhotoPreview.src = driverProfile.photo;
+                profilePhotoPreview.style.display = 'block';
+            } else {
+                profilePhotoPreview.style.display = 'none';
+            }
+
+            showModal('editProfileModal');
+        }
+
+        function updateDriverProfile(event) {
+            event.preventDefault();
+
+            driverProfile.name = document.getElementById('profileName').value;
+            driverProfile.phone = document.getElementById('profilePhone').value;
+            driverProfile.email = document.getElementById('profileEmail').value;
+            driverProfile.vehicleMake = document.getElementById('profileVehicleMake').value;
+            driverProfile.licensePlate = document.getElementById('profileLicensePlate').value;
+            driverProfile.licenseNumber = document.getElementById('profileLicenseNumber').value;
+            driverProfile.insurance = document.getElementById('profileInsurance').value;
+            driverProfile.emergencyContact = document.getElementById('profileEmergencyContact').value;
+
+            saveDriverProfile();
+            updateDriverProfileDisplay();
+            showSuccessMessage('✅ Driver profile updated!');
+            closeModal('editProfileModal');
+        }
+
+        function handleProfilePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    driverProfile.photo = e.target.result;
+                    document.getElementById('profilePhotoPreview').src = e.target.result;
+                    document.getElementById('profilePhotoPreview').style.display = 'block';
+                    showSuccessMessage('📷 Profile photo selected!');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function resetToDefaults() {
+            showConfirm('Reset Profile?', 'Are you sure you want to reset your driver profile to default values?').then(result => {
+                if (result) {
+                    driverProfile = {
+                        name: 'John Driver',
+                        phone: '+1 (555) 123-4567',
+                        email: 'john.driver@email.com',
+                        vehicleMake: 'Toyota Camry',
+                        licensePlate: 'ABC123',
+                        licenseNumber: '',
+                        insurance: '',
+                        emergencyContact: '',
+                        photo: null,
+                        rating: 4.8
+                    };
+                    saveDriverProfile();
+                    updateDriverProfileDisplay();
+                    closeModal('editProfileModal');
+                    showAlert('Profile Reset', 'Driver profile reset to defaults.');
+                }
+            });
+        }
+
+        // --- Earnings Reset Functions ---
+        function showResetEarningsModal() {
+            showModal('resetEarningsModal');
+        }
+
+        function resetDisplayOnly() {
+            showAlert('Earnings Reset', 'Today\'s earnings display has been reset to $0.00. Your ride data is safe!').then(() => {
+                dailyEarningsOffset = calculateTotalEarningsToday();
+                localStorage.setItem('ktransport360_earningsOffset', dailyEarningsOffset);
+                updateAnalytics();
+                closeModal('resetEarningsModal');
+            });
+        }
+
+        async function resetAllEarnings() {
+            const confirmed = await showConfirm('Permanent Reset', 'This will PERMANENTLY erase ALL earnings data and completed rides. Are you absolutely sure?');
+            if (confirmed) {
+                rides = rides.filter(ride => ride.status !== 'completed');
+                customers.forEach(customer => {
+                    customer.totalRides = rides.filter(r => r.customerName === customer.name).length;
+                    customer.totalSpent = rides.filter(r => r.customerName === customer.name).reduce((sum, r) => sum + r.price, 0);
+                    customer.avgRating = customer.totalRides > 0 ? (customer.totalSpent / customer.totalRides / 10) * 5 : 5.0;
+                });
+                saveRides();
+                saveCustomers();
+                dailyEarningsOffset = 0;
+                localStorage.removeItem('ktransport360_earningsOffset');
+                updateAnalytics();
+                updateNotificationBadges();
+                closeModal('resetEarningsModal');
+                showAlert('Earnings Erased', 'All earnings data and completed rides have been permanently erased.');
+            }
+        }
+
+        // --- Ride Management Functions ---
+        function addRide(event) {
+            event.preventDefault();
+            
+            const newRide = {
+                id: Date.now(),
+                customerName: document.getElementById('customerName').value,
+                customerPhone: document.getElementById('customerPhone').value,
+                customerEmail: document.getElementById('customerEmail').value,
+                pickupLocation: document.getElementById('pickupLocation').value,
+                dropoffLocation: document.getElementById('dropoffLocation').value,
+                date: document.getElementById('rideDate').value,
+                time: document.getElementById('rideTime').value,
+                price: parseFloat(document.getElementById('ridePrice').value),
+                status: 'scheduled',
+                priority: document.getElementById('ridePriority').value,
+                notes: document.getElementById('rideNotes').value,
+                distance: calculateDistance(),
+                duration: calculateDuration()
+            };
+
+            rides.push(newRide);
+            saveRides();
+            
+            updateCustomerDatabase(newRide);
+            
+            updateAnalytics();
+            updateNotificationBadges();
+            
+            closeModal('addRideModal');
+            showSuccessMessage('✅ Ride added successfully!');
+            
+            console.log('New ride added:', newRide);
+        }
+
+        function handlePhotoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('photoPreview').src = e.target.result;
+                    document.getElementById('photoPreview').style.display = 'block';
+                    showSuccessMessage('📷 Customer photo selected!');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateCustomerDatabase(ride) {
+            let customer = customers.find(c => c.phone === ride.customerPhone);
+            
+            if (customer) {
+                customer.totalRides++;
+                customer.totalSpent += ride.price;
+                customer.lastRide = ride.date;
+                customer.avgRating = ((customer.avgRating * (customer.totalRides - 1)) + 5) / customer.totalRides; 
+                if (!customer.preferredLocations.includes(ride.dropoffLocation)) {
+                    customer.preferredLocations.push(ride.dropoffLocation);
+                }
+            } else {
+                customer = {
+                    id: customers.length + 1,
+                    name: ride.customerName,
+                    phone: ride.customerPhone,
+                    email: ride.customerEmail,
+                    totalRides: 1,
+                    totalSpent: ride.price,
+                    avgRating: 5.0,
+                    isVIP: false,
+                    lastRide: ride.date,
+                    preferredLocations: [ride.dropoffLocation],
+                    notes: ''
+                };
+                customers.push(customer);
+            }
+            saveCustomers();
+        }
+
+        function editRide(rideId) {
+            const ride = rides.find(r => r.id === rideId);
+            if (!ride) {
+                showErrorMessage('Ride not found!');
+                return;
+            }
+
+            document.getElementById('customerName').value = ride.customerName;
+            document.getElementById('customerPhone').value = ride.customerPhone;
+            document.getElementById('customerEmail').value = ride.customerEmail || '';
+            document.getElementById('pickupLocation').value = ride.pickupLocation;
+            document.getElementById('dropoffLocation').value = ride.dropoffLocation;
+            document.getElementById('rideDate').value = ride.date;
+            document.getElementById('rideTime').value = ride.time;
+            document.getElementById('ridePrice').value = ride.price;
+            document.getElementById('ridePriority').value = ride.priority;
+            document.getElementById('rideNotes').value = ride.notes || '';
+
+            const form = document.getElementById('addRideForm');
+            form.onsubmit = function(event) {
+                event.preventDefault();
+                updateRide(rideId);
+            };
+
+            showAddRideModal();
+        }
+
+        function updateRide(rideId) {
+            const rideIndex = rides.findIndex(r => r.id === rideId);
+            if (rideIndex === -1) {
+                showErrorMessage('Error: Ride to update not found!');
+                return;
+            }
+
+            rides[rideIndex] = {
+                ...rides[rideIndex],
+                customerName: document.getElementById('customerName').value,
+                customerPhone: document.getElementById('customerPhone').value,
+                customerEmail: document.getElementById('customerEmail').value,
+                pickupLocation: document.getElementById('pickupLocation').value,
+                dropoffLocation: document.getElementById('dropoffLocation').value,
+                date: document.getElementById('rideDate').value,
+                time: document.getElementById('rideTime').value,
+                price: parseFloat(document.getElementById('ridePrice').value),
+                priority: document.getElementById('ridePriority').value,
+                notes: document.getElementById('rideNotes').value
+            };
+            saveRides();
+
+            closeModal('addRideModal');
+            showSuccessMessage('✅ Ride updated successfully!');
+            
+            document.getElementById('addRideForm').onsubmit = addRide;
+            
+            if (document.getElementById('ridesModal').classList.contains('open')) {
+                const title = document.getElementById('ridesModalTitle').textContent;
+                if (title.includes('Today')) showTodaysRides();
+                else if (title.includes('Tomorrow')) showTomorrowsRides();
+                else if (title.includes('Future')) showFutureRides();
+            }
+            updateAnalytics();
+            updateNotificationBadges();
+        }
+
+        function startRide(rideId) {
+            const ride = rides.find(r => r.id === rideId);
+            if (ride) {
+                ride.status = 'in-progress';
+                saveRides();
+                showSuccessMessage(`🚗 Started ride for ${ride.customerName}`);
+                updateAnalytics();
+                
+                if (document.getElementById('ridesModal').classList.contains('open')) {
+                    const title = document.getElementById('ridesModalTitle').textContent;
+                    if (title.includes('Today')) showTodaysRides();
+                    else if (title.includes('Tomorrow')) showTomorrowsRides();
+                    else if (title.includes('Future')) showFutureRides();
+                }
+            } else {
+                showErrorMessage('Ride not found!');
+            }
+        }
+
+        function completeRide(rideId) {
+            const ride = rides.find(r => r.id === rideId);
+            if (ride) {
+                ride.status = 'completed';
+                saveRides();
+                showSuccessMessage(`✅ Completed ride for ${ride.customerName}`);
+                updateAnalytics();
+                updateNotificationBadges();
+                
+                const currentTotalEarnings = calculateTotalEarnings();
+                document.getElementById('earningsToday').textContent = `$${(currentTotalEarnings - dailyEarningsOffset).toFixed(2)}`;
+                
+                if (document.getElementById('ridesModal').classList.contains('open')) {
+                    const title = document.getElementById('ridesModalTitle').textContent;
+                    if (title.includes('Today')) showTodaysRides();
+                    else if (title.includes('Tomorrow')) showTomorrowsRides();
+                    else if (title.includes('Future')) showFutureRides();
+                }
+            } else {
+                showErrorMessage('Ride not found!');
+            }
+        }
+
+        async function cancelRide(rideId) {
+            const confirmed = await showConfirm('Cancel Ride?', 'Are you sure you want to cancel this ride? This action cannot be undone.');
+            if (confirmed) {
+                const ride = rides.find(r => r.id === rideId);
+                if (ride) {
+                    ride.status = 'cancelled';
+                    saveRides();
+                    showSuccessMessage(`❌ Cancelled ride for ${ride.customerName}`);
+                    updateAnalytics();
+                    updateNotificationBadges();
+                    
+                    if (document.getElementById('ridesModal').classList.contains('open')) {
+                        const title = document.getElementById('ridesModalTitle').textContent;
+                        if (title.includes('Today')) showTodaysRides();
+                        else if (title.includes('Tomorrow')) showTomorrowsRides();
+                        else if (title.includes('Future')) showFutureRides();
+                    }
+                } else {
+                    showErrorMessage('Ride not found!');
+                }
+            }
+        }
+
+        function calculateDistance() {
+            return `${(Math.random() * 20 + 5).toFixed(1)} miles`;
+        }
+
+        function calculateDuration() {
+            return `${Math.floor(Math.random() * 30) + 10} minutes`;
+        }
+
+        function filterRides() {
+            const searchTerm = document.getElementById('ridesSearch').value.toLowerCase();
+            const today = new Date().toISOString().split('T')[0];
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const tomorrowStr = tomorrow.toISOString().split('T')[0];
+            const dayAfterTomorrow = new Date();
+            dayAfterTomorrow.setDate(new Date().getDate() + 2);
+
+            let ridesToFilter = [];
+            const modalTitle = document.getElementById('ridesModalTitle').textContent;
+
+            if (modalTitle.includes('Today')) {
+                ridesToFilter = rides.filter(ride => ride.date === today);
+            } else if (modalTitle.includes('Tomorrow')) {
+                ridesToFilter = rides.filter(ride => ride.date === tomorrowStr);
+            } else if (modalTitle.includes('Future')) {
+                ridesToFilter = rides.filter(ride => new Date(ride.date) >= dayAfterTomorrow);
+            } else {
+                ridesToFilter = rides;
+            }
+
+            const filteredAndSearchedRides = ridesToFilter.filter(ride => {
+                const matchesSearch = ride.customerName.toLowerCase().includes(searchTerm) ||
+                                      ride.pickupLocation.toLowerCase().includes(searchTerm) ||
+                                      ride.dropoffLocation.toLowerCase().includes(searchTerm) ||
+                                      (ride.notes && ride.notes.toLowerCase().includes(searchTerm));
+                const matchesStatus = currentFilter === 'all' || ride.status === currentFilter;
+                return matchesSearch && matchesStatus;
+            });
+            displayRides(filteredAndSearchedRides);
+        }
+
+        function filterRidesByStatus(status) {
+            currentFilter = status;
+            const filterTabs = document.querySelectorAll('.filter-tabs .filter-tab');
+            filterTabs.forEach(tab => {
+                if (tab.textContent.toLowerCase().includes(status)) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            filterRides();
         }
 
         function displayRides(ridesToShow) {
@@ -2105,14 +2949,14 @@
                     <div class="empty-state">
                         <div class="empty-state-icon">🚗</div>
                         <h3>No rides found</h3>
-                        <p>No rides scheduled for this period.</p>
+                        <p>No rides scheduled for this period or matching your search.</p>
                     </div>
                 `;
                 return;
             }
 
             ridesList.innerHTML = ridesToShow.map(ride => `
-                <div class="ride-item priority-${ride.priority}">
+                <div class="ride-item priority-${ride.priority}" data-ride-id="${ride.id}">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div style="flex: 1;">
                             <h4>${ride.customerName}</h4>
@@ -2152,18 +2996,167 @@
             `).join('');
         }
 
-        function showAnalytics() {
-            updateAnalytics();
-            document.getElementById('analyticsModal').style.display = 'block';
-            drawPerformanceChart();
-            displayTopCustomers();
+        // --- Analytics Functions ---
+        function updateAnalytics() {
+            const completedRides = rides.filter(ride => ride.status === 'completed');
+            const totalEarnings = completedRides.reduce((sum, ride) => sum + ride.price, 0);
+            const today = new Date().toISOString().split('T')[0];
+            const thisWeekCompletedRides = getThisWeekRides().filter(r => r.status === 'completed');
+            const thisMonthCompletedRides = getThisMonthRides().filter(r => r.status === 'completed');
+
+            const totalEarningsToday = calculateTotalEarningsToday();
+            document.getElementById('earningsToday').textContent = `$${(totalEarningsToday - dailyEarningsOffset).toFixed(2)}`;
+
+            if (document.getElementById('totalRides')) {
+                document.getElementById('totalRides').textContent = completedRides.length;
+                document.getElementById('totalEarnings').textContent = `$${totalEarnings.toFixed(2)}`;
+                
+                const ratedRides = rides.filter(r => r.rating && r.rating > 0);
+                const actualAvgRating = ratedRides.length > 0 ? (ratedRides.reduce((sum, r) => sum + r.rating, 0) / ratedRides.length).toFixed(1) : driverProfile.rating;
+                document.getElementById('avgRating').textContent = actualAvgRating;
+                
+                document.getElementById('repeatCustomers').textContent = customers.filter(c => c.totalRides > 1).length;
+                document.getElementById('thisWeekRides').textContent = thisWeekCompletedRides.length;
+                document.getElementById('avgPrice').textContent = `$${(totalEarnings / Math.max(completedRides.length, 1)).toFixed(2)}`;
+                
+                document.getElementById('todayRides').textContent = rides.filter(r => r.date === today && r.status === 'completed').length;
+                document.getElementById('weeklyEarnings').textContent = `$${thisWeekCompletedRides.reduce((sum, ride) => sum + ride.price, 0).toFixed(2)}`;
+                document.getElementById('monthlyRides').textContent = thisMonthCompletedRides.length;
+                document.getElementById('customerSatisfaction').textContent = '96%';
+            }
         }
 
-        function showCustomers() {
-            displayCustomers(customers);
-            document.getElementById('customersModal').style.display = 'block';
+        function calculateTotalEarningsToday() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayCompletedRides = rides.filter(ride => ride.date === today && ride.status === 'completed');
+            return todayCompletedRides.reduce((sum, ride) => sum + ride.price, 0);
         }
 
+        function calculateTotalEarnings() {
+            const allCompletedRides = rides.filter(ride => ride.status === 'completed');
+            return allCompletedRides.reduce((sum, ride) => sum + ride.price, 0);
+        }
+
+        function getThisWeekRides() {
+            const today = new Date();
+            const weekStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay());
+            weekStart.setHours(0,0,0,0);
+
+            return rides.filter(ride => {
+                const rideDate = new Date(ride.date);
+                rideDate.setHours(0,0,0,0);
+                return rideDate >= weekStart;
+            });
+        }
+
+        function getThisMonthRides() {
+            const today = new Date();
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            monthStart.setHours(0,0,0,0);
+
+            return rides.filter(ride => {
+                const rideDate = new Date(ride.date);
+                rideDate.setHours(0,0,0,0);
+                return rideDate >= monthStart;
+            });
+        }
+
+        let performanceChartInstance = null;
+
+        function drawPerformanceChart() {
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+
+            if (performanceChartInstance) {
+                performanceChartInstance.destroy();
+            }
+
+            const last7Days = [];
+            const earningsLast7Days = [];
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                const dateStr = d.toISOString().split('T')[0];
+                last7Days.push(d.toLocaleDateString('en-US', { weekday: 'short' }));
+                
+                const dayEarnings = rides.filter(ride => ride.date === dateStr && ride.status === 'completed')
+                                     .reduce((sum, ride) => sum + ride.price, 0);
+                earningsLast7Days.push(dayEarnings);
+            }
+
+            performanceChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: last7Days,
+                    datasets: [{
+                        label: 'Daily Earnings ($)',
+                        data: earningsLast7Days,
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        title: {
+                            display: true,
+                            text: 'Daily Earnings',
+                            color: isDarkMode ? '#e2e8f0' : '#333'
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: isDarkMode ? '#a0aec0' : '#666'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
+                            },
+                            ticks: {
+                                color: isDarkMode ? '#a0aec0' : '#666',
+                                callback: function(value) {
+                                    return '$' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function displayTopCustomers() {
+            const topCustomersDiv = document.getElementById('topCustomers');
+            const sortedCustomers = [...customers].sort((a, b) => b.totalSpent - a.totalSpent);
+            
+            if (sortedCustomers.length === 0) {
+                topCustomersDiv.innerHTML = '<p style="text-align: center; color: #666;">No customer data available yet.</p>';
+                return;
+            }
+
+            topCustomersDiv.innerHTML = sortedCustomers.slice(0, 5).map(customer => `
+                <div class="driver-profile" style="margin-bottom: 10px; padding: 10px; background: #f8f9fa;">
+                    <div class="profile-avatar" style="width: 40px; height: 40px; font-size: 18px;">${customer.name.split(' ').map(n => n[0]).join('')}</div>
+                    <div class="profile-info">
+                        <h4 style="margin-bottom: 2px;">${customer.name}</h4>
+                        <p style="font-size: 12px; color: #666;">${customer.totalRides} rides • $${customer.totalSpent.toFixed(2)}</p>
+                    </div>
+                    <div class="rating-stars" style="margin-left: auto;">⭐ ${customer.avgRating}</div>
+                </div>
+            `).join('');
+        }
+
+        // --- Customer Management Functions ---
         function displayCustomers(customersToShow) {
             const customersGrid = document.getElementById('customersGrid');
             
@@ -2184,7 +3177,7 @@
                     <div class="customer-name">${customer.name}</div>
                     <div class="customer-rides">${customer.totalRides} rides • $${customer.totalSpent.toFixed(2)}</div>
                     <div class="rating-stars">⭐ ${customer.avgRating}</div>
-                    ${customer.isVIP ? '<div class="badge badge-warning">VIP</div>' : ''}
+                    ${customer.isVIP ? '<div class="badge badge-warning" style="margin-top: 5px;">VIP</div>' : ''}
                     <div style="font-size: 12px; color: #666; margin-top: 5px;">
                         Last ride: ${customer.lastRide}
                     </div>
@@ -2192,28 +3185,66 @@
             `).join('');
         }
 
+        function filterCustomers() {
+            const searchTerm = document.getElementById('customersSearch').value.toLowerCase();
+            let customersToFilter = customers;
+
+            if (currentFilter !== 'all') {
+                customersToFilter = customersToFilter.filter(customer => {
+                    if (currentFilter === 'repeat') return customer.totalRides > 1;
+                    if (currentFilter === 'new') return customer.totalRides === 1;
+                    if (currentFilter === 'vip') return customer.isVIP;
+                    return true;
+                });
+            }
+
+            const filteredAndSearchedCustomers = customersToFilter.filter(customer => {
+                return customer.name.toLowerCase().includes(searchTerm) ||
+                       customer.phone.toLowerCase().includes(searchTerm) ||
+                       (customer.email && customer.email.toLowerCase().includes(searchTerm)) ||
+                       (customer.notes && customer.notes.toLowerCase().includes(searchTerm));
+            });
+            displayCustomers(filteredAndSearchedCustomers);
+        }
+
+        function filterCustomersByType(type) {
+            currentFilter = type;
+            const filterTabs = document.querySelectorAll('#customersModal .filter-tabs .filter-tab');
+            filterTabs.forEach(tab => {
+                if (tab.textContent.toLowerCase().includes(type)) {
+                    tab.classList.add('active');
+                } else {
+                    tab.classList.remove('active');
+                }
+            });
+            filterCustomers();
+        }
+
         function showCustomerDetails(customerId) {
             const customer = customers.find(c => c.id === customerId);
-            if (!customer) return;
+            if (!customer) {
+                showErrorMessage('Customer details not found!');
+                return;
+            }
 
             currentCustomer = customer;
             
             document.getElementById('customerDetailsTitle').textContent = `👤 ${customer.name}`;
             
-            const customerRides = rides.filter(ride => ride.customerName === customer.name);
+            const customerRides = rides.filter(ride => ride.customerName === customer.name).sort((a, b) => new Date(b.date) - new Date(a.date));
             
             document.getElementById('customerDetailsContent').innerHTML = `
-                <div class="driver-profile">
+                <div class="driver-profile" style="box-shadow: none; border: 1px solid #eee;">
                     <div class="profile-avatar">${customer.name.split(' ').map(n => n[0]).join('')}</div>
                     <div class="profile-info">
                         <h3>${customer.name} ${customer.isVIP ? '<span class="badge badge-warning">VIP</span>' : ''}</h3>
                         <p>📞 ${customer.phone}</p>
-                        <p>✉️ ${customer.email}</p>
+                        ${customer.email ? `<p>✉️ ${customer.email}</p>` : ''}
                         <div class="rating-stars">⭐ ${customer.avgRating} average rating</div>
                     </div>
                 </div>
                 
-                <div class="analytics-grid">
+                <div class="analytics-grid" style="margin-top: 15px;">
                     <div class="analytics-card">
                         <div class="analytics-value">${customer.totalRides}</div>
                         <div class="analytics-label">Total Rides</div>
@@ -2223,7 +3254,7 @@
                         <div class="analytics-label">Total Spent</div>
                     </div>
                     <div class="analytics-card">
-                        <div class="analytics-value">$${(customer.totalSpent / customer.totalRides).toFixed(2)}</div>
+                        <div class="analytics-value">$${customer.totalRides > 0 ? (customer.totalSpent / customer.totalRides).toFixed(2) : '0.00'}</div>
                         <div class="analytics-label">Avg per Ride</div>
                     </div>
                     <div class="analytics-card">
@@ -2232,7 +3263,7 @@
                     </div>
                 </div>
                 
-                ${customer.preferredLocations ? `
+                ${customer.preferredLocations && customer.preferredLocations.length > 0 ? `
                     <div class="chart-container">
                         <h4>📍 Preferred Locations</h4>
                         ${customer.preferredLocations.map(location => `<span class="badge badge-success" style="margin: 2px;">${location}</span>`).join('')}
@@ -2247,7 +3278,6 @@
                 ` : ''}
             `;
 
-            // Display ride history
             const rideHistoryHtml = customerRides.map(ride => `
                 <div class="timeline-item">
                     <div class="timeline-time">${ride.date} at ${ride.time}</div>
@@ -2264,848 +3294,234 @@
 
             document.getElementById('customerRideHistory').innerHTML = customerRides.length > 0 ? 
                 `<div class="timeline">${rideHistoryHtml}</div>` : 
-                '<p style="text-align: center; color: #666;">No ride history available</p>';
+                '<p style="text-align: center; color: #666;">No ride history available for this customer.</p>';
 
-            document.getElementById('customerDetailsModal').style.display = 'block';
+            showModal('customerDetailsModal');
         }
 
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-            if (modalId === 'addRideModal') {
-                document.getElementById('addRideForm').reset();
-                document.getElementById('photoPreview').style.display = 'none';
-            }
-        }
-
-        // Ride management functions
-        function addRide(event) {
-            event.preventDefault();
-            
-            const formData = new FormData(event.target);
-            const newRide = {
-                id: rides.length + 1,
-                customerName: document.getElementById('customerName').value,
-                customerPhone: document.getElementById('customerPhone').value,
-                customerEmail: document.getElementById('customerEmail').value,
-                pickupLocation: document.getElementById('pickupLocation').value,
-                dropoffLocation: document.getElementById('dropoffLocation').value,
-                date: document.getElementById('rideDate').value,
-                time: document.getElementById('rideTime').value,
-                price: parseFloat(document.getElementById('ridePrice').value),
-                status: 'scheduled',
-                priority: document.getElementById('ridePriority').value,
-                notes: document.getElementById('rideNotes').value,
-                distance: calculateDistance(),
-                duration: calculateDuration()
-            };
-
-            rides.push(newRide);
-            
-            // Update or add customer
-            updateCustomerDatabase(newRide);
-            
-            // Update analytics
-            updateAnalytics();
-            updateNotificationBadges();
-            
-            // Close modal and show success
-            closeModal('addRideModal');
-            showSuccessMessage('✅ Ride added successfully!');
-            
-            console.log('New ride added:', newRide);
-        }
-
-        function updateCustomerDatabase(ride) {
-            let customer = customers.find(c => c.phone === ride.customerPhone);
-            
-            if (customer) {
-                // Update existing customer
-                customer.totalRides++;
-                customer.totalSpent += ride.price;
-                customer.lastRide = ride.date;
-                customer.avgRating = ((customer.avgRating * (customer.totalRides - 1)) + 5) / customer.totalRides; // Assume 5-star rating for new rides
+        // --- Communication Functions ---
+        function callCustomer(phone = currentCustomer?.phone) {
+            if (phone) {
+                window.open(`tel:${phone}`);
+                showSuccessMessage(`📞 Calling ${phone}...`);
             } else {
-                // Add new customer
-                customer = {
-                    id: customers.length + 1,
-                    name: ride.customerName,
-                    phone: ride.customerPhone,
-                    email: ride.customerEmail,
-                    totalRides: 1,
-                    totalSpent: ride.price,
-                    avgRating: 5.0,
-                    isVIP: false,
-                    lastRide: ride.date,
-                    preferredLocations: [ride.dropoffLocation],
-                    notes: ''
-                };
-                customers.push(customer);
+                showErrorMessage('No phone number available to call.');
             }
         }
 
-        function editRide(rideId) {
-            const ride = rides.find(r => r.id === rideId);
-            if (!ride) return;
-
-            // Populate form with existing data
-            document.getElementById('customerName').value = ride.customerName;
-            document.getElementById('customerPhone').value = ride.customerPhone;
-            document.getElementById('customerEmail').value = ride.customerEmail || '';
-            document.getElementById('pickupLocation').value = ride.pickupLocation;
-            document.getElementById('dropoffLocation').value = ride.dropoffLocation;
-            document.getElementById('rideDate').value = ride.date;
-            document.getElementById('rideTime').value = ride.time;
-            document.getElementById('ridePrice').value = ride.price;
-            document.getElementById('ridePriority').value = ride.priority;
-            document.getElementById('rideNotes').value = ride.notes || '';
-
-            // Change form submit to update instead of add
-            const form = document.getElementById('addRideForm');
-            form.onsubmit = function(event) {
-                event.preventDefault();
-                updateRide(rideId);
-            };
-
-            showAddRideModal();
-        }
-
-        function updateRide(rideId) {
-            const rideIndex = rides.findIndex(r => r.id === rideId);
-            if (rideIndex === -1) return;
-
-            rides[rideIndex] = {
-                ...rides[rideIndex],
-                customerName: document.getElementById('customerName').value,
-                customerPhone: document.getElementById('customerPhone').value,
-                customerEmail: document.getElementById('customerEmail').value,
-                pickupLocation: document.getElementById('pickupLocation').value,
-                dropoffLocation: document.getElementById('dropoffLocation').value,
-                date: document.getElementById('rideDate').value,
-                time: document.getElementById('rideTime').value,
-                price: parseFloat(document.getElementById('ridePrice').value),
-                priority: document.getElementById('ridePriority').value,
-                notes: document.getElementById('rideNotes').value
-            };
-
-            closeModal('addRideModal');
-            showSuccessMessage('✅ Ride updated successfully!');
-            
-            // Reset form submit function
-            document.getElementById('addRideForm').onsubmit = addRide;
-        }
-
-        function startRide(rideId) {
-            const ride = rides.find(r => r.id === rideId);
-            if (ride) {
-                ride.status = 'in-progress';
-                showSuccessMessage(`🚗 Started ride for ${ride.customerName}`);
-                updateAnalytics();
-                
-                // Refresh current view if rides modal is open
-                if (document.getElementById('ridesModal').style.display === 'block') {
-                    const title = document.getElementById('ridesModalTitle').textContent;
-                    if (title.includes('Today')) showTodaysRides();
-                    else if (title.includes('Tomorrow')) showTomorrowsRides();
-                    else if (title.includes('Future')) showFutureRides();
-                }
+        function smsCustomer(phone = currentCustomer?.phone) {
+            if (phone) {
+                window.open(`sms:${phone}`);
+                showSuccessMessage(`💬 Opening SMS to ${phone}...`);
+            } else {
+                showErrorMessage('No phone number available for SMS.');
             }
         }
 
-        function completeRide(rideId) {
-            const ride = rides.find(r => r.id === rideId);
-            if (ride) {
-                ride.status = 'completed';
-                showSuccessMessage(`✅ Completed ride for ${ride.customerName}`);
-                updateAnalytics();
-                updateNotificationBadges();
-                
-                // Update earnings
-                const currentEarnings = parseFloat(document.getElementById('earningsToday').textContent.replace('$', ''));
-                document.getElementById('earningsToday').textContent = `$${(currentEarnings + ride.price).toFixed(2)}`;
-                
-                // Refresh current view
-                if (document.getElementById('ridesModal').style.display === 'block') {
-                    const title = document.getElementById('ridesModalTitle').textContent;
-                    if (title.includes('Today')) showTodaysRides();
-                    else if (title.includes('Tomorrow')) showTomorrowsRides();
-                    else if (title.includes('Future')) showFutureRides();
-                }
-            }
-        }
-
-        function cancelRide(rideId) {
-            if (confirm('Are you sure you want to cancel this ride?')) {
-                const ride = rides.find(r => r.id === rideId);
-                if (ride) {
-                    ride.status = 'cancelled';
-                    showSuccessMessage(`❌ Cancelled ride for ${ride.customerName}`);
-                    updateAnalytics();
-                    updateNotificationBadges();
-                    
-                    // Refresh current view
-                    if (document.getElementById('ridesModal').style.display === 'block') {
-                        const title = document.getElementById('ridesModalTitle').textContent;
-                        if (title.includes('Today')) showTodaysRides();
-                        else if (title.includes('Tomorrow')) showTomorrowsRides();
-                        else if (title.includes('Future')) showFutureRides();
-                    }
-                }
-            }
-        }
-
-        // Communication functions
-        function callCustomer(phone) {
-            if (phone || currentCustomer) {
-                const phoneNumber = phone || currentCustomer.phone;
-                window.open(`tel:${phoneNumber}`);
-                showSuccessMessage(`📞 Calling ${phoneNumber}...`);
-            }
-        }
-
-        function smsCustomer(phone) {
-            if (phone || currentCustomer) {
-                const phoneNumber = phone || currentCustomer.phone;
-                window.open(`sms:${phoneNumber}`);
-                showSuccessMessage(`💬 Opening SMS to ${phoneNumber}...`);
-            }
-        }
-
-        function whatsappCustomer(phone) {
-            if (phone || currentCustomer) {
-                const phoneNumber = phone || currentCustomer.phone;
-                const cleanPhone = phoneNumber.replace(/[^\d]/g, '');
+        function whatsappCustomer(phone = currentCustomer?.phone) {
+            if (phone) {
+                const cleanPhone = phone.replace(/[^\d]/g, '');
                 window.open(`https://wa.me/${cleanPhone}`);
-                showSuccessMessage(`📱 Opening WhatsApp to ${phoneNumber}...`);
+                showSuccessMessage(`📱 Opening WhatsApp to ${phone}...`);
+            } else {
+                showErrorMessage('No phone number available for WhatsApp.');
             }
         }
 
-        function emailCustomer(email) {
-            if (email || (currentCustomer && currentCustomer.email)) {
-                const emailAddress = email || currentCustomer.email;
-                window.open(`mailto:${emailAddress}`);
-                showSuccessMessage(`✉️ Opening email to ${emailAddress}...`);
+        function emailCustomer(email = currentCustomer?.email) {
+            if (email) {
+                window.open(`mailto:${email}`);
+                showSuccessMessage(`✉️ Opening email to ${email}...`);
+            } else {
+                showErrorMessage('No email address available.');
             }
         }
 
-        // Analytics functions
-        function updateAnalytics() {
-            const completedRides = rides.filter(ride => ride.status === 'completed');
-            const totalEarnings = completedRides.reduce((sum, ride) => sum + ride.price, 0);
-            const today = new Date().toISOString().split('T')[0];
-            const thisWeek = getThisWeekRides();
-            const thisMonth = getThisMonthRides();
-
-            // Update analytics display
-            if (document.getElementById('totalRides')) {
-                document.getElementById('totalRides').textContent = completedRides.length;
-                document.getElementById('totalEarnings').textContent = `$${totalEarnings.toFixed(2)}`;
-                document.getElementById('avgRating').textContent = '4.8';
-                document.getElementById('repeatCustomers').textContent = customers.filter(c => c.totalRides > 1).length;
-                document.getElementById('thisWeekRides').textContent = thisWeek.length;
-                document.getElementById('avgPrice').textContent = `$${(totalEarnings / Math.max(completedRides.length, 1)).toFixed(2)}`;
-                
-                document.getElementById('todayRides').textContent = rides.filter(r => r.date === today && r.status === 'completed').length;
-                document.getElementById('weeklyEarnings').textContent = `$${thisWeek.reduce((sum, ride) => sum + ride.price, 0).toFixed(2)}`;
-                document.getElementById('monthlyRides').textContent = thisMonth.length;
-                document.getElementById('customerSatisfaction').textContent = '96%';
-            }
-        }
-
-        function getThisWeekRides() {
-            const today = new Date();
-            const weekStart = new Date(today.setDate(today.getDate() - today.getDay()));
-            return rides.filter(ride => {
-                const rideDate = new Date(ride.date);
-                return rideDate >= weekStart && ride.status === 'completed';
-            });
-        }
-
-        function getThisMonthRides() {
-            const today = new Date();
-            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-            return rides.filter(ride => {
-                const rideDate = new Date(ride.date);
-                return rideDate >= monthStart && ride.status === 'completed';
-            });
-        }
-
-        function drawPerformanceChart() {
-            const canvas = document.getElementById('performanceChart');
-            if (!canvas) return;
-            
-            const ctx = canvas.getContext('2d');
-            canvas.width = 400;
-            canvas.height = 200;
-            
-            // Clear canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw simple bar chart
-            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-            const earnings = [120, 95, 150, 80, 200, 175, 110];
-            const maxEarnings = Math.max(...earnings);
-            
-            const barWidth = 40;
-            const barSpacing = 10;
-            const chartHeight = 150;
-            const startX = 30;
-            const startY = 160;
-            
-            ctx.fillStyle = '#667eea';
-            ctx.font = '12px Arial';
-            
-            days.forEach((day, index) => {
-                const barHeight = (earnings[index] / maxEarnings) * chartHeight;
-                const x = startX + index * (barWidth + barSpacing);
-                const y = startY - barHeight;
-                
-                // Draw bar
-                ctx.fillRect(x, y, barWidth, barHeight);
-                
-                // Draw day label
-                ctx.fillStyle = '#333';
-                ctx.fillText(day, x + 5, startY + 15);
-                
-                // Draw earnings label
-                ctx.fillText(`$${earnings[index]}`, x, y - 5);
-                
-                ctx.fillStyle = '#667eea';
-            });
-        }
-
-        function displayTopCustomers() {
-            const topCustomers = [...customers]
-                .sort((a, b) => b.totalSpent - a.totalSpent)
-                .slice(0, 5);
-            
-            const topCustomersHtml = topCustomers.map((customer, index) => `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
-                    <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="font-weight: bold; color: #667eea;">#${index + 1}</span>
-                        <div>
-                            <div style="font-weight: 600;">${customer.name}</div>
-                            <div style="font-size: 12px; color: #666;">${customer.totalRides} rides</div>
-                        </div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div style="font-weight: bold;">$${customer.totalSpent.toFixed(2)}</div>
-                        <div style="font-size: 12px; color: #666;">⭐ ${customer.avgRating}</div>
-                    </div>
-                </div>
-            `).join('');
-            
-            document.getElementById('topCustomers').innerHTML = topCustomersHtml;
-        }
-
-        // Export functions
+        // --- Export & Backup Functions ---
         function exportData() {
-            document.getElementById('exportModal').style.display = 'block';
+            showModal('exportModal');
         }
 
-        function exportToCSV() {
-            const csvData = rides.map(ride => ({
-                'Customer Name': ride.customerName,
-                'Phone': ride.customerPhone,
-                'Email': ride.customerEmail || '',
-                'Pickup Location': ride.pickupLocation,
-                'Dropoff Location': ride.dropoffLocation,
-                'Date': ride.date,
-                'Time': ride.time,
-                'Price': ride.price,
-                'Status': ride.status,
-                'Priority': ride.priority,
-                'Notes': ride.notes || '',
-                'Distance': ride.distance || '',
-                'Duration': ride.duration || ''
-            }));
-            
-            const csvContent = convertToCSV(csvData);
-            downloadFile(csvContent, 'ktransport360_rides.csv', 'text/csv');
-            closeModal('exportModal');
-            showSuccessMessage('📊 CSV file downloaded successfully!');
-        }
+        async function exportToCSV() {
+            const confirmed = await showConfirm('Export to CSV', 'This will download all your ride data as a CSV file. Continue?');
+            if (!confirmed) return;
 
-        function exportToPDF() {
-            showSuccessMessage('📄 PDF export feature coming soon!');
-            closeModal('exportModal');
-        }
+            if (rides.length === 0) {
+                showAlert('No Data', 'No ride data to export.');
+                return;
+            }
 
-        function exportCustomers() {
-            const csvData = customers.map(customer => ({
-                'Name': customer.name,
-                'Phone': customer.phone,
-                'Email': customer.email,
-                'Total Rides': customer.totalRides,
-                'Total Spent': customer.totalSpent,
-                'Average Rating': customer.avgRating,
-                'VIP Status': customer.isVIP ? 'Yes' : 'No',
-                'Last Ride': customer.lastRide,
-                'Notes': customer.notes || ''
-            }));
-            
-            const csvContent = convertToCSV(csvData);
-            downloadFile(csvContent, 'ktransport360_customers.csv', 'text/csv');
-            closeModal('exportModal');
-            showSuccessMessage('👥 Customer list downloaded successfully!');
-        }
-
-        function backupData() {
-            const backupData = {
-                rides: rides,
-                customers: customers,
-                driverProfile: driverProfile,
-                analytics: analytics,
-                exportDate: new Date().toISOString(),
-                appVersion: '2.1'
-            };
-            
-            const jsonContent = JSON.stringify(backupData, null, 2);
-            downloadFile(jsonContent, 'ktransport360_backup.json', 'application/json');
-            closeModal('exportModal');
-            showSuccessMessage('💾 Backup file created successfully!');
-        }
-
-        function convertToCSV(data) {
-            if (data.length === 0) return '';
-            
-            const headers = Object.keys(data[0]);
+            const headers = [
+                "ID", "Customer Name", "Customer Phone", "Customer Email", "Pickup Location",
+                "Dropoff Location", "Date", "Time", "Price", "Status", "Priority", "Notes",
+                "Rating", "Feedback", "Distance", "Duration"
+            ];
             const csvRows = [
                 headers.join(','),
-                ...data.map(row => 
-                    headers.map(header => {
-                        const value = row[header] || '';
-                        return `"${value.toString().replace(/"/g, '""')}"`;
-                    }).join(',')
-                )
+                ...rides.map(ride => {
+                    const values = [
+                        ride.id,
+                        `"${ride.customerName.replace(/"/g, '""')}"`,
+                        `"${ride.customerPhone}"`,
+                        `"${ride.customerEmail || ''}"`,
+                        `"${ride.pickupLocation.replace(/"/g, '""')}"`,
+                        `"${ride.dropoffLocation.replace(/"/g, '""')}"`,
+                        ride.date,
+                        ride.time,
+                        ride.price.toFixed(2),
+                        ride.status,
+                        ride.priority,
+                        `"${(ride.notes || '').replace(/"/g, '""')}"`,
+                        ride.rating || '',
+                        `"${(ride.feedback || '').replace(/"/g, '""')}"`,
+                        `"${ride.distance || ''}"`,
+                        `"${ride.duration || ''}"`
+                    ];
+                    return values.join(',');
+                })
             ];
-            
-            return csvRows.join('\n');
-        }
-
-        function downloadFile(content, fileName, contentType) {
-            const blob = new Blob([content], { type: contentType });
-            const url = window.URL.createObjectURL(blob);
+            const csvContent = csvRows.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
-            link.href = url;
-            link.download = fileName;
+            link.href = URL.createObjectURL(blob);
+            link.download = 'ktransport360_rides_data.csv';
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            window.URL.revokeObjectURL(url);
+            showSuccessMessage('📤 Ride data exported to CSV!');
+            closeModal('exportModal');
         }
 
-        // Search and filter functions
-        function filterRides() {
-            const searchTerm = document.getElementById('ridesSearch').value.toLowerCase();
-            const filteredRides = rides.filter(ride => 
-                ride.customerName.toLowerCase().includes(searchTerm) ||
-                ride.customerPhone.includes(searchTerm) ||
-                ride.pickupLocation.toLowerCase().includes(searchTerm) ||
-                ride.dropoffLocation.toLowerCase().includes(searchTerm)
-            );
-            
-            displayRides(filteredRides);
+        async function exportToPDF() {
+            const confirmed = await showConfirm('Export to PDF', 'This feature requires a PDF generation library. For demonstration, we\'ll simulate a download. Continue?');
+            if (!confirmed) return;
+            showAlert('PDF Export', 'PDF report simulated. (Requires library like jsPDF to fully function)');
+            closeModal('exportModal');
         }
 
-        function filterRidesByStatus(status) {
-            // Update active tab
-            document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            let filteredRides = rides;
-            if (status !== 'all') {
-                filteredRides = rides.filter(ride => ride.status === status);
+        async function exportCustomers() {
+            const confirmed = await showConfirm('Export Customers', 'This will download your customer list as a CSV file. Continue?');
+            if (!confirmed) return;
+
+            if (customers.length === 0) {
+                showAlert('No Data', 'No customer data to export.');
+                return;
             }
-            
-            // Apply search filter if active
-            const searchTerm = document.getElementById('ridesSearch').value.toLowerCase();
-            if (searchTerm) {
-                filteredRides = filteredRides.filter(ride => 
-                    ride.customerName.toLowerCase().includes(searchTerm) ||
-                    ride.customerPhone.includes(searchTerm) ||
-                    ride.pickupLocation.toLowerCase().includes(searchTerm) ||
-                    ride.dropoffLocation.toLowerCase().includes(searchTerm)
-                );
-            }
-            
-            displayRides(filteredRides);
-        }
 
-        function filterCustomers() {
-            const searchTerm = document.getElementById('customersSearch').value.toLowerCase();
-            const filteredCustomers = customers.filter(customer => 
-                customer.name.toLowerCase().includes(searchTerm) ||
-                customer.phone.includes(searchTerm) ||
-                customer.email.toLowerCase().includes(searchTerm)
-            );
-            
-            displayCustomers(filteredCustomers);
-        }
-
-        function filterCustomersByType(type) {
-            // Update active tab
-            document.querySelectorAll('.filter-tab').forEach(tab => tab.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            let filteredCustomers = customers;
-            if (type === 'repeat') {
-                filteredCustomers = customers.filter(customer => customer.totalRides > 1);
-            } else if (type === 'new') {
-                filteredCustomers = customers.filter(customer => customer.totalRides === 1);
-            } else if (type === 'vip') {
-                filteredCustomers = customers.filter(customer => customer.isVIP);
-            }
-            
-            // Apply search filter if active
-            const searchTerm = document.getElementById('customersSearch').value.toLowerCase();
-            if (searchTerm) {
-                filteredCustomers = filteredCustomers.filter(customer => 
-                    customer.name.toLowerCase().includes(searchTerm) ||
-                    customer.phone.includes(searchTerm) ||
-                    customer.email.toLowerCase().includes(searchTerm)
-                );
-            }
-            
-            displayCustomers(filteredCustomers);
-        }
-
-        // Photo handling functions
-        function handlePhotoUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('photoPreview');
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function handleProfilePhotoUpload(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('profilePhotoPreview');
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                    
-                    // Store the photo data
-                    driverProfile.photo = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        // Driver Profile Functions
-        function showEditProfileModal() {
-            // Populate form with current profile data
-            document.getElementById('profileName').value = driverProfile.name;
-            document.getElementById('profilePhone').value = driverProfile.phone;
-            document.getElementById('profileEmail').value = driverProfile.email || '';
-            document.getElementById('profileVehicleMake').value = driverProfile.vehicleMake;
-            document.getElementById('profileLicensePlate').value = driverProfile.licensePlate;
-            document.getElementById('profileLicenseNumber').value = driverProfile.licenseNumber || '';
-            document.getElementById('profileInsurance').value = driverProfile.insurance || '';
-            document.getElementById('profileEmergencyContact').value = driverProfile.emergencyContact || '';
-            
-            // Show existing photo if available
-            const photoPreview = document.getElementById('profilePhotoPreview');
-            if (driverProfile.photo) {
-                photoPreview.src = driverProfile.photo;
-                photoPreview.style.display = 'block';
-            } else {
-                photoPreview.style.display = 'none';
-            }
-            
-            document.getElementById('editProfileModal').style.display = 'block';
-        }
-
-        function updateDriverProfile(event) {
-            event.preventDefault();
-            
-            // Update profile object
-            driverProfile.name = document.getElementById('profileName').value;
-            driverProfile.phone = document.getElementById('profilePhone').value;
-            driverProfile.email = document.getElementById('profileEmail').value;
-            driverProfile.vehicleMake = document.getElementById('profileVehicleMake').value;
-            driverProfile.licensePlate = document.getElementById('profileLicensePlate').value;
-            driverProfile.licenseNumber = document.getElementById('profileLicenseNumber').value;
-            driverProfile.insurance = document.getElementById('profileInsurance').value;
-            driverProfile.emergencyContact = document.getElementById('profileEmergencyContact').value;
-            
-            // Save to localStorage
-            saveDriverProfile();
-            
-            // Update display
-            updateDriverProfileDisplay();
-            
-            // Close modal
-            closeModal('editProfileModal');
-            
-            showSuccessMessage('✅ Profile updated successfully!');
-        }
-
-        function loadDriverProfile() {
-            try {
-                const savedProfile = localStorage.getItem('ktransport360_profile');
-                if (savedProfile) {
-                    driverProfile = { ...driverProfile, ...JSON.parse(savedProfile) };
-                }
-            } catch (error) {
-                console.warn('Failed to load driver profile:', error);
-            }
-        }
-
-        function saveDriverProfile() {
-            try {
-                localStorage.setItem('ktransport360_profile', JSON.stringify(driverProfile));
-                console.log('Driver profile saved successfully');
-            } catch (error) {
-                console.warn('Failed to save driver profile:', error);
-                showErrorMessage('Failed to save profile. Please try again.');
-            }
-        }
-
-        function updateDriverProfileDisplay() {
-            // Update driver name and initials
-            document.getElementById('driverName').textContent = driverProfile.name;
-            document.getElementById('driverPhone').innerHTML = `📞 ${driverProfile.phone}`;
-            document.getElementById('driverVehicle').innerHTML = `🚗 ${driverProfile.vehicleMake} - ${driverProfile.licensePlate}`;
-            
-            // Update avatar initials
-            const initials = driverProfile.name.split(' ').map(n => n[0]).join('').toUpperCase();
-            const avatarElement = document.getElementById('driverAvatar');
-            
-            if (driverProfile.photo) {
-                // Use uploaded photo
-                avatarElement.style.backgroundImage = `url(${driverProfile.photo})`;
-                avatarElement.style.backgroundSize = 'cover';
-                avatarElement.style.backgroundPosition = 'center';
-                avatarElement.textContent = '';
-            } else {
-                // Use initials
-                avatarElement.style.backgroundImage = 'none';
-                avatarElement.textContent = initials;
-            }
-            
-            // Update rating display
-            document.getElementById('driverRating').innerHTML = `⭐⭐⭐⭐⭐ ${driverProfile.rating}`;
-        }
-
-        function resetToDefaults() {
-            if (confirm('⚠️ Are you sure you want to reset your profile to default values?\n\nThis will erase all your current profile information.')) {
-                driverProfile = {
-                    name: 'John Driver',
-                    phone: '+1 (555) 123-4567',
-                    email: 'john.driver@email.com',
-                    vehicleMake: 'Toyota Camry',
-                    licensePlate: 'ABC123',
-                    licenseNumber: '',
-                    insurance: '',
-                    emergencyContact: '',
-                    photo: null,
-                    rating: 4.8
-                };
-                
-                saveDriverProfile();
-                updateDriverProfileDisplay();
-                closeModal('editProfileModal');
-                showSuccessMessage('🔄 Profile reset to defaults');
-            }
-        }
-
-        // Utility functions
-        function calculateDistance() {
-            // Simulate distance calculation
-            return `${Math.floor(Math.random() * 20 + 1)}.${Math.floor(Math.random() * 9)} miles`;
-        }
-
-        function calculateDuration() {
-            // Simulate duration calculation
-            return `${Math.floor(Math.random() * 45 + 5)} minutes`;
-        }
-
-        function showSuccessMessage(message) {
-            // Create success notification
-            const notification = document.createElement('div');
-            notification.className = 'success-message';
-            notification.textContent = message;
-            notification.style.position = 'fixed';
-            notification.style.top = '20px';
-            notification.style.left = '50%';
-            notification.style.transform = 'translateX(-50%)';
-            notification.style.zIndex = '10000';
-            notification.style.maxWidth = '90%';
-            notification.style.textAlign = 'center';
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 3000);
-        }
-
-        function showErrorMessage(message) {
-            // Create error notification
-            const notification = document.createElement('div');
-            notification.className = 'error-message';
-            notification.textContent = message;
-            notification.style.position = 'fixed';
-            notification.style.top = '20px';
-            notification.style.left = '50%';
-            notification.style.transform = 'translateX(-50%)';
-            notification.style.zIndex = '10000';
-            notification.style.maxWidth = '90%';
-            notification.style.textAlign = 'center';
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                document.body.removeChild(notification);
-            }, 3000);
-        }
-
-        // Emergency and safety functions
-        function triggerEmergency() {
-            if (confirm('🚨 Are you sure you want to trigger emergency mode?\n\nThis will:\n• Send emergency alert with your location\n• Contact emergency services\n• Notify emergency contacts')) {
-                showSuccessMessage('🚨 Emergency alert sent! Help is on the way.');
-                
-                // Simulate emergency actions with driver profile info
-                console.log('Emergency triggered at:', new Date().toLocaleString());
-                console.log('Location: Jacksonville, Florida');
-                console.log('Driver:', driverProfile.name);
-                console.log('Phone:', driverProfile.phone);
-                console.log('Vehicle:', driverProfile.vehicleMake, '-', driverProfile.licensePlate);
-                console.log('Emergency Contact:', driverProfile.emergencyContact || 'None set');
-                console.log('Insurance:', driverProfile.insurance || 'None set');
-                
-                // In a real app, this would:
-                // - Get GPS coordinates
-                // - Send SMS/call to emergency contacts
-                // - Contact emergency services
-                // - Log emergency event
-            }
-        }
-
-        // Voice command functions
-        function toggleVoiceCommand() {
-            const voiceBtn = document.getElementById('voiceBtn');
-            
-            if (!isVoiceListening) {
-                startVoiceListening();
-                voiceBtn.classList.add('listening');
-                voiceBtn.textContent = '🔴';
-                showSuccessMessage('🎤 Voice listening activated - say a command');
-            } else {
-                stopVoiceListening();
-                voiceBtn.classList.remove('listening');
-                voiceBtn.textContent = '🎤';
-                showSuccessMessage('🎤 Voice listening stopped');
-            }
-        }
-
-        function startVoiceListening() {
-            isVoiceListening = true;
-            
-            // Simulate voice recognition
-            setTimeout(() => {
-                if (isVoiceListening) {
-                    const commands = [
-                        'Show today\'s rides',
-                        'Add new ride',
-                        'Call customer',
-                        'Show analytics',
-                        'Export data'
+            const headers = ["ID", "Name", "Phone", "Email", "Total Rides", "Total Spent", "Average Rating", "VIP Status", "Last Ride Date", "Preferred Locations", "Notes"];
+            const csvRows = [
+                headers.join(','),
+                ...customers.map(customer => {
+                    const values = [
+                        customer.id,
+                        `"${customer.name.replace(/"/g, '""')}"`,
+                        `"${customer.phone}"`,
+                        `"${customer.email || ''}"`,
+                        customer.totalRides,
+                        customer.totalSpent.toFixed(2),
+                        customer.avgRating,
+                        customer.isVIP ? 'Yes' : 'No',
+                        customer.lastRide || '',
+                        `"${(customer.preferredLocations || []).join('; ').replace(/"/g, '""')}"`,
+                        `"${(customer.notes || '').replace(/"/g, '""')}"`
                     ];
-                    const randomCommand = commands[Math.floor(Math.random() * commands.length)];
-                    showSuccessMessage(`🎤 Heard: "${randomCommand}"`);
-                    
-                    // Execute command
-                    executeVoiceCommand(randomCommand);
-                    stopVoiceListening();
-                }
-            }, 3000);
+                    return values.join(',');
+                })
+            ];
+            const csvContent = csvRows.join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'ktransport360_customers_data.csv';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showSuccessMessage('📤 Customer data exported to CSV!');
+            closeModal('exportModal');
         }
 
-        function stopVoiceListening() {
-            isVoiceListening = false;
-            const voiceBtn = document.getElementById('voiceBtn');
-            voiceBtn.classList.remove('listening');
-            voiceBtn.textContent = '🎤';
+        async function backupData() {
+            const confirmed = await showConfirm('Backup All Data', 'This will create a comprehensive backup file of all your app data (rides, customers, profile) as a JSON file. Continue?');
+            if (!confirmed) return;
+
+            const backupData = {
+                driverProfile: driverProfile,
+                rides: rides,
+                customers: customers,
+                dailyEarningsOffset: dailyEarningsOffset
+            };
+
+            const jsonContent = JSON.stringify(backupData, null, 2);
+            const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `ktransport360_backup_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showSuccessMessage('💾 App data backed up successfully!');
+            closeModal('exportModal');
         }
 
-        function executeVoiceCommand(command) {
-            switch (command.toLowerCase()) {
-                case 'show today\'s rides':
-                    showTodaysRides();
-                    break;
-                case 'add new ride':
-                    showAddRideModal();
-                    break;
-                case 'show analytics':
-                    showAnalytics();
-                    break;
-                case 'export data':
-                    exportData();
-                    break;
-                default:
-                    showSuccessMessage('🎤 Command not recognized');
-            }
-        }
-
-        // Settings functions
+        // --- Settings Panel Functions ---
         function toggleSettings() {
-            const settingsPanel = document.getElementById('settingsPanel');
-            settingsPanel.classList.toggle('open');
+            const panel = document.getElementById('settingsPanel');
+            const overlay = document.getElementById('settingsOverlay');
+            panel.classList.toggle('open');
+            overlay.classList.toggle('open');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsPanel').classList.remove('open');
+            document.getElementById('settingsOverlay').classList.remove('open');
         }
 
         function toggleDarkMode() {
             isDarkMode = !isDarkMode;
-            document.body.classList.toggle('dark-mode');
-            localStorage.setItem('darkMode', isDarkMode.toString());
-            
-            const toggle = event.target;
-            toggle.classList.toggle('active');
-            
-            showSuccessMessage(isDarkMode ? '🌙 Dark mode enabled' : '☀️ Light mode enabled');
+            document.body.classList.toggle('dark-mode', isDarkMode);
+            localStorage.setItem('darkMode', isDarkMode);
+            if (performanceChartInstance) {
+                performanceChartInstance.options.plugins.title.color = isDarkMode ? '#e2e8f0' : '#333';
+                performanceChartInstance.options.scales.x.ticks.color = isDarkMode ? '#a0aec0' : '#666';
+                performanceChartInstance.options.scales.y.grid.color = isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+                performanceChartInstance.options.scales.y.ticks.color = isDarkMode ? '#a0aec0' : '#666';
+                performanceChartInstance.update();
+            }
+            event.currentTarget.classList.toggle('active', isDarkMode);
+            showSuccessMessage(`Dark Mode ${isDarkMode ? 'enabled' : 'disabled'}.`);
         }
 
         function toggleNotifications() {
-            const toggle = event.target;
-            toggle.classList.toggle('active');
-            const enabled = toggle.classList.contains('active');
-            showSuccessMessage(enabled ? '🔔 Notifications enabled' : '🔕 Notifications disabled');
+            const toggle = event.currentTarget;
+            const isActive = toggle.classList.toggle('active');
+            showAlert('Notifications', `Notifications are now ${isActive ? 'ON' : 'OFF'}. (This is a demo feature)`);
         }
 
         function toggleAutoBackup() {
-            const toggle = event.target;
-            toggle.classList.toggle('active');
-            const enabled = toggle.classList.contains('active');
-            showSuccessMessage(enabled ? '💾 Auto backup enabled' : '💾 Auto backup disabled');
+            const toggle = event.currentTarget;
+            const isActive = toggle.classList.toggle('active');
+            showAlert('Auto Backup', `Auto Backup is now ${isActive ? 'ON' : 'OFF'}. (This is a demo feature)`);
         }
 
         function toggleVoiceCommands() {
-            const toggle = event.target;
-            toggle.classList.toggle('active');
-            const enabled = toggle.classList.contains('active');
-            showSuccessMessage(enabled ? '🎤 Voice commands enabled' : '🎤 Voice commands disabled');
+            const toggle = event.currentTarget;
+            const isActive = toggle.classList.toggle('active');
+            showAlert('Voice Commands', `Voice Commands are now ${isActive ? 'ON' : 'OFF'}. (Actual voice functionality not implemented in demo)`);
         }
 
         function toggleGPSTracking() {
-            const toggle = event.target;
-            toggle.classList.toggle('active');
-            const enabled = toggle.classList.contains('active');
-            showSuccessMessage(enabled ? '🗺️ GPS tracking enabled' : '🗺️ GPS tracking disabled');
+            const toggle = event.currentTarget;
+            const isActive = toggle.classList.toggle('active');
+            showAlert('GPS Tracking', `GPS Tracking is now ${isActive ? 'ON' : 'OFF'}. (This is a demo feature)`);
         }
 
-        function resetAppData() {
-            if (confirm('⚠️ Are you sure you want to reset all app data?\n\nThis will permanently delete:\n• All rides\n• Customer database\n• Analytics data\n• Driver profile\n• Settings\n\nThis action cannot be undone!')) {
+        async function resetAppData() {
+            const confirmed = await showConfirm('Reset All App Data', 'This will permanently delete ALL your rides, customers, profile, and earnings data. This cannot be undone. Are you sure?');
+            if (confirmed) {
                 rides = [];
                 customers = [];
-                analytics = {};
+                dailyEarningsOffset = 0;
+                localStorage.clear();
                 driverProfile = {
                     name: 'John Driver',
                     phone: '+1 (555) 123-4567',
@@ -3118,209 +3534,41 @@
                     photo: null,
                     rating: 4.8
                 };
-                localStorage.clear();
-                updateDriverProfileDisplay();
-                showSuccessMessage('🔄 App data has been reset');
+                initializeApp();
                 updateAnalytics();
                 updateNotificationBadges();
+                showAlert('App Data Reset', 'All app data has been reset to default.');
+                closeSettings();
             }
         }
 
-        // Route optimization functions
-        function acceptRoute() {
-            showSuccessMessage('🗺️ Route accepted! Navigation will start shortly.');
-            
-            // Hide route suggestion
-            document.getElementById('routeOptimization').style.display = 'none';
-        }
-
-        // Weather and status functions
-        function updateWeather() {
-            // Simulate weather update
-            const temperatures = [65, 70, 75, 80, 85];
-            const conditions = ['☀️ Sunny', '⛅ Partly Cloudy', '🌧️ Light Rain', '⛈️ Thunderstorms', '❄️ Snow'];
-            
-            const temp = temperatures[Math.floor(Math.random() * temperatures.length)];
-            const condition = conditions[Math.floor(Math.random() * conditions.length)];
-            
-            const weatherWidget = document.getElementById('weatherWidget');
-            if (weatherWidget) {
-                weatherWidget.innerHTML = `
-                    <div class="weather-temp">${temp}°F</div>
-                    <div class="weather-desc">${condition} - ${getWeatherAdvice(condition)}</div>
-                `;
-            }
-        }
-
-        function getWeatherAdvice(condition) {
-            if (condition.includes('Rain') || condition.includes('Thunderstorms')) {
-                return 'Drive carefully, roads may be slippery';
-            } else if (condition.includes('Snow')) {
-                return 'Use extreme caution, check tire condition';
-            } else if (condition.includes('Sunny')) {
-                return 'Perfect driving weather';
-            } else {
-                return 'Good driving conditions';
-            }
-        }
-
+        // --- Other Functions ---
         function checkOfflineStatus() {
             const offlineBanner = document.getElementById('offlineBanner');
-            
-            if (!navigator.onLine) {
+            const isOnline = navigator.onLine;
+            if (!isOnline) {
                 offlineBanner.style.display = 'block';
             } else {
                 offlineBanner.style.display = 'none';
             }
-            
-            // Listen for online/offline events
-            window.addEventListener('online', () => {
-                offlineBanner.style.display = 'none';
-                showSuccessMessage('📡 Connection restored - data syncing...');
-            });
-            
-            window.addEventListener('offline', () => {
-                offlineBanner.style.display = 'block';
-            });
+            console.log(`App is ${isOnline ? 'online' : 'offline'}.`);
         }
 
-        // Keyboard shortcuts
-        document.addEventListener('keydown', function(event) {
-            // Ctrl/Cmd + N: New ride
-            if ((event.ctrlKey || event.metaKey) && event.key === 'n') {
-                event.preventDefault();
-                showAddRideModal();
-            }
-            
-            // Ctrl/Cmd + T: Today's rides
-            if ((event.ctrlKey || event.metaKey) && event.key === 't') {
-                event.preventDefault();
-                showTodaysRides();
-            }
-            
-            // Ctrl/Cmd + E: Export
-            if ((event.ctrlKey || event.metaKey) && event.key === 'e') {
-                event.preventDefault();
-                exportData();
-            }
-            
-            // Escape: Close modals
-            if (event.key === 'Escape') {
-                const modals = document.querySelectorAll('.modal');
-                modals.forEach(modal => {
-                    if (modal.style.display === 'block') {
-                        modal.style.display = 'none';
-                    }
-                });
-            }
-        });
-
-        // Close modals when clicking outside
-        window.addEventListener('click', function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-            }
-            
-            // Close settings panel when clicking outside
-            const settingsPanel = document.getElementById('settingsPanel');
-            if (settingsPanel.classList.contains('open') && 
-                !settingsPanel.contains(event.target) && 
-                !event.target.closest('button[onclick="toggleSettings()"]')) {
-                settingsPanel.classList.remove('open');
-            }
-        });
-
-        // Auto-save functionality
-        setInterval(function() {
-            // Auto-save data every 30 seconds
-            try {
-                localStorage.setItem('ktransport360_rides', JSON.stringify(rides));
-                localStorage.setItem('ktransport360_customers', JSON.stringify(customers));
-                localStorage.setItem('ktransport360_profile', JSON.stringify(driverProfile));
-                localStorage.setItem('ktransport360_lastSave', new Date().toISOString());
-                console.log('Auto-save completed');
-            } catch (error) {
-                console.warn('Auto-save failed:', error);
-            }
-        }, 30000);
-
-        // Load saved data on startup
-        function loadSavedData() {
-            try {
-                const savedRides = localStorage.getItem('ktransport360_rides');
-                const savedCustomers = localStorage.getItem('ktransport360_customers');
-                const savedProfile = localStorage.getItem('ktransport360_profile');
-                
-                if (savedRides) {
-                    rides = JSON.parse(savedRides);
-                }
-                
-                if (savedCustomers) {
-                    customers = JSON.parse(savedCustomers);
-                }
-                
-                if (savedProfile) {
-                    driverProfile = { ...driverProfile, ...JSON.parse(savedProfile) };
-                }
-                
-                console.log('Saved data loaded successfully');
-            } catch (error) {
-                console.warn('Failed to load saved data:', error);
-                loadSampleData(); // Fallback to sample data
-            }
+        function triggerEmergency() {
+            showAlert('🚨 Emergency', 'Emergency alert triggered! This feature would usually contact predefined emergency contacts or services. (Demo action)');
         }
 
-        // Service Worker for offline functionality
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(function(registration) {
-                        console.log('SW registered: ', registration);
-                    })
-                    .catch(function(registrationError) {
-                        console.log('SW registration failed: ', registrationError);
-                    });
-            });
-        }
-
-        // Periodic updates
-        setInterval(updateWeather, 300000); // Update weather every 5 minutes
-        setInterval(updateNotificationBadges, 60000); // Update badges every minute
-
-        // Initialize app when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeApp);
-        } else {
-            initializeApp();
-        }
-
-        // Performance monitoring
-        function logPerformance() {
-            if (performance && performance.navigation) {
-                const loadTime = performance.navigation.loadEventEnd - performance.navigation.loadEventStart;
-                console.log(`App loaded in ${loadTime}ms`);
+        function toggleVoiceCommand() {
+            isVoiceListening = !isVoiceListening;
+            const voiceBtn = document.getElementById('voiceBtn');
+            if (isVoiceListening) {
+                voiceBtn.classList.add('listening');
+                showAlert('🎤 Voice Command', 'Listening for commands... Say "Add Ride", "Show Today\'s Rides", etc.');
+            } else {
+                voiceBtn.classList.remove('listening');
+                showAlert('🎤 Voice Command', 'Voice command listening stopped.');
             }
         }
-
-        window.addEventListener('load', logPerformance);
-
-        // Error handling
-        window.addEventListener('error', function(event) {
-            console.error('App error:', event.error);
-            showErrorMessage('An error occurred. Please refresh the app if problems persist.');
-        });
-
-        // Unhandled promise rejection handling
-        window.addEventListener('unhandledrejection', function(event) {
-            console.error('Unhandled promise rejection:', event.reason);
-            event.preventDefault();
-        });
-
-        console.log('🚛 KTransport360 Driver App fully loaded and ready!');
-        console.log('📱 Version 2.1 - Enhanced with Profile Management');
-        console.log('💾 All data is saved locally on your device');
-        console.log('👤 Click the Edit button on your profile to customize your information');
-        console.log('🔧 Press Ctrl+Shift+I to open developer tools');
     </script>
 </body>
 </html>
