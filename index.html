@@ -239,7 +239,6 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
-
         /* Status Badges */
         .status-badge {
             display: inline-block;
@@ -592,6 +591,17 @@
 
                 <div id="futureRidesList">
                     <!-- Future rides will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Completed Rides Modal -->
+        <div id="completedRidesModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeCompletedRidesModal()">&times;</span>
+                <h2>✅ Today's Completed Rides</h2>
+                <div id="completedRidesDetails">
+                    <!-- Completed rides details will be populated here -->
                 </div>
             </div>
         </div>
@@ -1043,9 +1053,9 @@
                         <div class="stat-number">${totalRides}</div>
                         <div class="stat-label">Today's Rides</div>
                     </div>
-                    <div class="stat-card" style="background: linear-gradient(135deg, #27ae60, #229954);">
+                    <div class="stat-card" style="background: linear-gradient(135deg, #27ae60, #229954); cursor: pointer;" onclick="showCompletedRides()">
                         <div class="stat-number">${completed}</div>
-                        <div class="stat-label">Completed</div>
+                        <div class="stat-label">Completed (Click for Details)</div>
                     </div>
                     <div class="stat-card" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
                         <div class="stat-number">$${totalEarnings.toFixed(2)}</div>
@@ -1376,6 +1386,69 @@
             }
         }
 
+        // Show completed rides details modal
+        function showCompletedRides() {
+            console.log('Showing completed rides details');
+            const today = new Date().toISOString().split('T')[0];
+            const completedRides = ridesData.filter(ride => ride.date === today && ride.status === 'completed');
+            
+            if (completedRides.length === 0) {
+                showNotification('ℹ️ No completed rides for today yet!');
+                return;
+            }
+
+            // Sort completed rides by dropoff time
+            completedRides.sort((a, b) => {
+                const timeA = new Date(`1970/01/01 ${a.dropoffTime}`).getTime();
+                const timeB = new Date(`1970/01/01 ${b.dropoffTime}`).getTime();
+                return timeA - timeB;
+            });
+
+            let totalEarnings = 0;
+            let ridesHtml = '';
+            
+            completedRides.forEach((ride, index) => {
+                const fareValue = parseFloat(ride.fare.replace('$', '')) || 0;
+                totalEarnings += fareValue;
+                
+                ridesHtml += `
+                    <div class="customer-card completed" style="margin: 15px 0;">
+                        <div class="customer-info">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div class="customer-name">${ride.name}</div>
+                                <div style="font-size: 1.1em; color: #27ae60; font-weight: bold;">#${index + 1}</div>
+                            </div>
+                            <div class="customer-details">📞 ${ride.phone}</div>
+                            <div class="route-info">
+                                <strong>⏰ Scheduled: ${ride.scheduledTime}</strong><br>
+                                📍 <strong>From:</strong> ${ride.pickupLocation}<br>
+                                🎯 <strong>To:</strong> ${ride.dropoffLocation}
+                            </div>
+                            <div class="fare-display">💰 Fare: ${ride.fare}</div>
+                            <div class="time-display">🟢 <strong>Picked up:</strong> ${ride.pickupTime}</div>
+                            <div class="time-display">🔵 <strong>Dropped off:</strong> ${ride.dropoffTime}</div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Add summary at the top
+            const summaryHtml = `
+                <div class="alert alert-success" style="margin-bottom: 20px;">
+                    📊 <strong>TODAY'S SUMMARY</strong><br>
+                    ${completedRides.length} completed rides • Total earnings: $${totalEarnings.toFixed(2)}
+                </div>
+            `;
+
+            document.getElementById('completedRidesDetails').innerHTML = summaryHtml + ridesHtml;
+            document.getElementById('completedRidesModal').classList.add('show');
+        }
+
+        // Close completed rides modal
+        function closeCompletedRidesModal() {
+            document.getElementById('completedRidesModal').classList.remove('show');
+        }
+
         // Show the "Add New Ride" modal
         function showAddRideModal() {
             console.log('Opening add ride modal.');
@@ -1678,12 +1751,16 @@
         window.onclick = function(event) {
             const addModal = document.getElementById('addRideModal');
             const cancelModal = document.getElementById('cancelConfirmModal');
+            const completedModal = document.getElementById('completedRidesModal');
             
             if (addModal && event.target === addModal) {
                 closeModal();
             }
             if (cancelModal && event.target === cancelModal) {
                 closeCancelModal();
+            }
+            if (completedModal && event.target === completedModal) {
+                closeCompletedRidesModal();
             }
         };
 
