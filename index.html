@@ -12,133 +12,7 @@
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent; /* Removes tap highlight on mobile */
         }
-
-        // Setup photo handling for upload inputs
-        function setupPhotoHandling(inputId, previewId, imageId) {
-            const photoInput = document.getElementById(inputId);
-            if (photoInput) {
-                photoInput.addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    if (file) {
-                        if (file.size > 5 * 1024 * 1024) { // 5MB limit
-                            showNotification('❌ Photo too large! Please choose a photo under 5MB.');
-                            this.value = '';
-                            return;
-                        }
-
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            const img = document.getElementById(imageId);
-                            const preview = document.getElementById(previewId);
-                            if (img && preview) {
-                                img.src = e.target.result;
-                                preview.style.display = 'block';
-                            }
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-            }
-        }
-
-        // Clear photo preview
-        function clearPhoto() {
-            document.getElementById('customerPhoto').value = '';
-            document.getElementById('photoPreview').style.display = 'none';
-        }
-
-        function clearReschedulePhoto() {
-            document.getElementById('rescheduleCustomerPhoto').value = '';
-            document.getElementById('reschedulePhotoPreview').style.display = 'none';
-        }
-
-        // Setup customer lookup functionality
-        function setupCustomerLookup() {
-            const nameInput = document.getElementById('customerName');
-            const phoneInput = document.getElementById('customerPhone');
-            
-            if (nameInput) {
-                nameInput.addEventListener('blur', function() {
-                    lookupCustomerByName(this.value.trim());
-                });
-            }
-            
-            if (phoneInput) {
-                phoneInput.addEventListener('blur', function() {
-                    lookupCustomerByPhone(this.value.trim());
-                });
-            }
-        }
-
-        // Look up customer by name
-        function lookupCustomerByName(name) {
-            if (!name) return;
-            
-            const customer = customersDatabase.find(c => 
-                c.name.toLowerCase() === name.toLowerCase()
-            );
-            
-            if (customer) {
-                showCustomerFound(customer);
-            }
-        }
-
-        // Look up customer by phone
-        function lookupCustomerByPhone(phone) {
-            if (!phone) return;
-            
-            const customer = customersDatabase.find(c => c.phone === phone);
-            
-            if (customer) {
-                showCustomerFound(customer);
-            }
-        }
-
-        // Show customer found notification and populate fields
-        function showCustomerFound(customer) {
-            const isRepeatCustomer = customer.totalRides > 0;
-            let message = `👋 Found customer: ${customer.name}`;
-            
-            if (isRepeatCustomer) {
-                message += `\n🎉 REPEAT CUSTOMER! (${customer.totalRides} previous rides)`;
-                message += `\n💰 Total spent: ${customer.totalSpent.toFixed(2)}`;
-                
-                if (customer.totalRides >= 5) {
-                    message += `\n⭐ LOYAL CUSTOMER - Consider offering a discount!`;
-                }
-            }
-            
-            // Auto-populate fields if they're empty
-            if (!document.getElementById('customerName').value) {
-                document.getElementById('customerName').value = customer.name;
-            }
-            if (!document.getElementById('customerPhone').value) {
-                document.getElementById('customerPhone').value = customer.phone;
-            }
-            
-            // Show photo if available
-            if (customer.photo) {
-                const img = document.getElementById('previewImage');
-                const preview = document.getElementById('photoPreview');
-                if (img && preview) {
-                    img.src = customer.photo;
-                    preview.style.display = 'block';
-                }
-            }
-            
-            showNotification(message);
-        }
-
-        // Add or update customer in database
-        function addOrUpdateCustomer(customerData, rideData) {
-            const existingIndex = customersDatabase.findIndex(c => 
-                c.phone === customerData.phone
-            );
-            
-            const fareAmount = parseFloat(rideData.fare.replace('
-
-        /* Body and Overall Layout */
-        body {
+                body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Purple-blue gradient */
             min-height: 100vh; /* Changed for consistent height */
@@ -3594,7 +3468,9 @@
     </div>
 
     <script>
-        // *** IMPORTANT: If you see ReferenceErrors, ensure this script runs! ***
+    <script>
+        
+                        // *** IMPORTANT: If you see ReferenceErrors, ensure this script runs! ***
         // This log helps confirm the script is starting to execute.
         console.log('KTransport360 Script: Beginning execution...');
 
@@ -4923,4 +4799,576 @@
             // Basic validation and highlighting
             if (!name) {
                 customerNameInput.classList.add('missing-field');
-                missingFields = true
+                missingFields = true }
+            if (!phone) {
+                customerPhoneInput.classList.add('missing-field');
+                missingFields = true;
+            }
+            if (!date) {
+                pickupDateInput.classList.add('missing-field');
+                missingFields = true;
+            }
+            if (!time) {
+                pickupTimeInput.classList.add('missing-field');
+                missingFields = true;
+            }
+            if (!pickup) {
+                pickupLocationInput.classList.add('missing-field');
+                missingFields = true;
+            }
+            if (!dropoff) {
+                dropoffLocationInput.classList.add('missing-field');
+                missingFields = true;
+            }
+
+            if (missingFields) {
+                showNotification('❌ Please fill in all highlighted fields!'); 
+                return;
+            }
+
+            if (pickup) {
+                addLocationIfNew(pickup);
+            }
+            if (dropoff) {
+                addLocationIfNew(dropoff);
+            }
+
+            let photoData = null;
+            const photoInput = document.getElementById('customerPhoto');
+            if (photoInput.files && photoInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    photoData = e.target.result;
+                    proceedWithSave();
+                };
+                reader.readAsDataURL(photoInput.files[0]);
+                return;
+            } else {
+                proceedWithSave();
+            }
+
+            function proceedWithSave() {
+                let formattedFare = '';
+                const fareNum = parseFloat(fare.replace(/[^0-9.]/g, ''));
+                if (!isNaN(fareNum)) {
+                    formattedFare = `$${fareNum.toFixed(2)}`;
+                } else {
+                    formattedFare = '$0.00';
+                }
+                
+                const newRide = {
+                    id: Date.now(),
+                    name: name,
+                    phone: phone,
+                    pickupLocation: pickup,
+                    dropoffLocation: dropoff,
+                    date: date,
+                    scheduledTime: formatTime(time),
+                    pickupTime: '',
+                    dropoffTime: '',
+                    fare: formattedFare,
+                    notes: notes,
+                    status: 'scheduled',
+                    addedAt: new Date().toISOString()
+                };
+
+                ridesData.push(newRide);
+                saveData();
+
+                const customerData = {
+                    name: name,
+                    phone: phone,
+                    photo: photoData
+                };
+                addOrUpdateCustomer(customerData, newRide);
+
+                closeModal();
+                showNotification(`✅ Ride scheduled for ${name}!`);
+                updateStats();
+                
+                const todayNormalized = getNormalizedDateString(new Date());
+                const tomorrow = new Date();
+                tomorrow.setDate(new Date().getDate() + 1);
+                const tomorrowNormalized = getNormalizedDateString(tomorrow);
+
+                if (date === todayNormalized && document.getElementById('todaysScreen').classList.contains('active')) {
+                    displayTodaysRides();
+                } else if (date === tomorrowNormalized && document.getElementById('tomorrowsScreen').classList.contains('active')) {
+                    displayTomorrowsRides();
+                } else if (date > tomorrowNormalized && document.getElementById('futureScreen').classList.contains('active')) {
+                    displayFutureRides();
+                }
+            }
+        }
+
+        // Helper: Converts 24-hour time string to 12-hour format (e.g., "14:30" -> "2:30 PM")
+        function formatTime(time24) {
+            if (!time24) return '';
+            const [hours, minutes] = time24.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const hour12 = hour % 12 || 12; // Handles 0 for midnight as 12 AM
+            return `${hour12}:${minutes} ${ampm}`;
+        }
+
+        // Export data to clipboard and optionally as a file
+        function exportData() {
+            console.log('Initiating data export.');
+            // Filter only completed rides for the export report
+            const allCompletedRides = ridesData.filter(ride => ride.status === 'completed');
+
+            if (allCompletedRides.length === 0) {
+                showNotification('ℹ️ No completed rides to export yet!'); // Use custom notification
+                return;
+            }
+
+            // Sort completed rides by date and then by dropoff time for better report order
+            allCompletedRides.sort((a, b) => {
+                const dateTimeA = new Date(`${a.date} ${a.dropoffTime}`);
+                const dateTimeB = new Date(`${b.date} ${b.dropoffTime}`);
+                return dateTimeA.getTime() - dateTimeB.getTime(); // Compare timestamps
+            });
+
+
+            // Construct the export text in a simple table-like format
+            let exportText = "KTRANSPORT360 DAILY EXPORT\n";
+            exportText += `Report Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}\n\n`;
+            exportText += "Customer Name | Phone | Pickup Location | Dropoff Location | Scheduled Time | Pickup Time | Dropoff Time | Fare | Ride Date\n";
+            exportText += "=".repeat(150) + "\n"; // A long separator line
+
+            allCompletedRides.forEach(ride => {
+                // Ensure all fields are strings to avoid issues with join
+                const row = [
+                    ride.name,
+                    ride.phone,
+                    ride.pickupLocation,
+                    ride.dropoffLocation,
+                    ride.scheduledTime,
+                    ride.pickupTime,
+                    ride.dropoffTime,
+                    ride.fare,
+                    new Date(ride.date).toLocaleDateString() // Format date for readability
+                ].join(' | ');
+                exportText += row + '\n';
+            });
+
+            let totalEarnings = 0;
+            allCompletedRides.forEach(ride => {
+                if (ride.fare) {
+                    totalEarnings += parseFloat(ride.fare.replace('$', '')) || 0;
+                }
+            });
+
+            exportText += "\n" + "=".repeat(150) + "\n";
+            exportText += `SUMMARY: ${allCompletedRides.length} completed rides | Total Earnings: $${totalEarnings.toFixed(2)}`;
+
+            // Try to copy to clipboard using modern API first
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(exportText).then(() => {
+                    showNotification('📋 Data copied to clipboard! Paste into your spreadsheet or notes app.');
+                }).catch(err => {
+                    console.error('Clipboard writeText failed, attempting fallback:', err);
+                    fallbackCopyText(exportText);
+                });
+            } else {
+                // Fallback for older browsers
+                fallbackCopyText(exportText);
+            }
+
+            // After a short delay, ask if the user wants to download the file
+            setTimeout(() => {
+                if (confirm('💾 Would you like to download this data as a file too?')) {
+                    downloadData(exportText, `KTransport360_Export_${new Date().toISOString().split('T')[0]}.txt`);
+                }
+            }, 2000);
+        }
+
+        // Fallback method for copying text to clipboard (for older browsers)
+        function fallbackCopyText(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            // Make the textarea invisible and outside the viewport
+            textArea.style.position = 'fixed'; 
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select(); // Select the text
+            
+            try {
+                document.execCommand('copy'); // Execute the copy command
+                showNotification('📋 Data copied (fallback)! Paste into your spreadsheet or notes app.');
+            } catch (err) {
+                console.error('Fallback copy failed:', err);
+                showNotification('❌ Copy failed - Please manually select and copy the data.');
+            } finally {
+                document.body.removeChild(textArea); // Clean up the textarea
+            }
+        }
+
+        // Initiates a file download
+        function downloadData(content, filename) {
+            try {
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.style.display = 'none'; // Hide the anchor element
+                document.body.appendChild(a);
+                a.click(); // Programmatically click to trigger download
+                document.body.removeChild(a); // Clean up
+                URL.revokeObjectURL(url); // Free up the object URL
+                showNotification('💾 File downloaded to your device!');
+            } catch (error) {
+                console.error('Error during file download:', error);
+                showNotification('❌ Download failed.');
+            }
+        }
+
+        // Displays a temporary notification message
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            if (!notification) {
+                console.warn('Notification element not found. Cannot display notification:', message);
+                return;
+            }
+            notification.textContent = message;
+            notification.classList.add('show'); // Trigger CSS transition to show
+            
+            setTimeout(() => {
+                notification.classList.remove('show'); // Hide after 4 seconds
+            }, 4000);
+        }
+
+        // Event listener to close modal when clicking outside its content
+        window.onclick = function(event) {
+            const addModal = document.getElementById('addRideModal');
+            const cancelModal = document.getElementById('cancelConfirmModal');
+            const completedModal = document.getElementById('completedRidesModal');
+            const rescheduleModal = document.getElementById('rescheduleRideModal');
+            
+            if (addModal && event.target === addModal) {
+                closeModal();
+            }
+            if (cancelModal && event.target === cancelModal) {
+                closeCancelModal();
+            }
+            if (completedModal && event.target === completedModal) {
+                closeCompletedRidesModal();
+            }
+            if (rescheduleModal && event.target === rescheduleModal) {
+                closeRescheduleModal();
+            }
+        };
+
+        // Auto-save data to localStorage every 30 seconds
+        setInterval(() => {
+            saveData();
+            saveCommonLocationsData(); // Also auto-save common locations
+            saveCustomersDatabase(); // Also auto-save customers database
+            console.log('Auto-saved data to localStorage.');
+        }, 30000);
+
+        // Update status bar with current time every minute
+        function updateStatusBar() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const statusBar = document.getElementById('statusBar');
+            if (statusBar) {
+                statusBar.textContent = `📱 App Ready - Last updated: ${timeString}`;
+            }
+        }
+        setInterval(updateStatusBar, 60000); // Update every minute
+
+        // Global error handler for unhandled JavaScript errors
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('Global JS Error Caught:');
+            console.error('Message:', msg);
+            console.error('URL:', url);
+            console.error('Line:', lineNo, 'Column:', columnNo);
+            console.error('Error Object:', error);
+            // Optionally, show a more prominent error message to the user
+            showNotification('Fatal Error! Check console for details. 🚨');
+            return false; // Suppress default browser error reporting
+        };
+
+        // Function to clear all completed rides from local storage
+        function clearAllCompletedRides() {
+            const initialCompletedCount = ridesData.filter(ride => ride.status === 'completed').length;
+
+            if (initialCompletedCount === 0) {
+                showNotification('ℹ️ No completed rides to clear!');
+                return;
+            }
+
+            // Ask for confirmation before clearing
+            const confirmClear = confirm('Are you sure you want to clear ALL completed rides? This action cannot be undone. \n\nWe recommend exporting your data to a spreadsheet first if you want to keep a record!');
+
+            if (confirmClear) {
+                // Filter out all completed rides
+                ridesData = ridesData.filter(ride => ride.status !== 'completed');
+                saveData(); // Save the updated ridesData (without completed rides)
+
+                showNotification(`🧹 Cleared ${initialCompletedCount} completed rides! Earnings reset.`);
+                updateStats(); // Refresh stats on home screen
+                displayTodaysRides(); // Refresh ride lists
+                displayTomorrowsRides();
+                displayFutureRides();
+            } else {
+                showNotification('Clear operation cancelled.');
+            }
+        }
+
+        // Setup photo handling for upload inputs
+        function setupPhotoHandling(inputId, previewId, imageId) {
+            const photoInput = document.getElementById(inputId);
+            if (photoInput) {
+                photoInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                            showNotification('❌ Photo too large! Please choose a photo under 5MB.');
+                            this.value = '';
+                            return;
+                        }
+
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const img = document.getElementById(imageId);
+                            const preview = document.getElementById(previewId);
+                            if (img && preview) {
+                                img.src = e.target.result;
+                                preview.style.display = 'block';
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+        }
+
+        // Clear photo preview functions
+        function clearPhoto() {
+            document.getElementById('customerPhoto').value = '';
+            document.getElementById('photoPreview').style.display = 'none';
+        }
+
+        function clearReschedulePhoto() {
+            document.getElementById('rescheduleCustomerPhoto').value = '';
+            document.getElementById('reschedulePhotoPreview').style.display = 'none';
+        }
+
+        // Customer lookup functions
+        function setupCustomerLookup() {
+            const nameInput = document.getElementById('customerName');
+            const phoneInput = document.getElementById('customerPhone');
+            
+            if (nameInput) {
+                nameInput.addEventListener('blur', function() {
+                    lookupCustomerByName(this.value.trim());
+                });
+            }
+            
+            if (phoneInput) {
+                phoneInput.addEventListener('blur', function() {
+                    lookupCustomerByPhone(this.value.trim());
+                });
+            }
+        }
+
+        function lookupCustomerByName(name) {
+            if (!name) return;
+            const customer = customersDatabase.find(c => 
+                c.name.toLowerCase() === name.toLowerCase()
+            );
+            if (customer) {
+                showCustomerFound(customer);
+            }
+        }
+
+        function lookupCustomerByPhone(phone) {
+            if (!phone) return;
+            const customer = customersDatabase.find(c => c.phone === phone);
+            if (customer) {
+                showCustomerFound(customer);
+            }
+        }
+
+        function showCustomerFound(customer) {
+            const isRepeatCustomer = customer.totalRides > 0;
+            let message = `👋 Found customer: ${customer.name}`;
+            
+            if (isRepeatCustomer) {
+                message += `\n🎉 REPEAT CUSTOMER! (${customer.totalRides} previous rides)`;
+                message += `\n💰 Total spent: $${customer.totalSpent.toFixed(2)}`;
+                
+                if (customer.totalRides >= 5) {
+                    message += `\n⭐ LOYAL CUSTOMER - Consider offering a discount!`;
+                }
+            }
+            
+            if (!document.getElementById('customerName').value) {
+                document.getElementById('customerName').value = customer.name;
+            }
+            if (!document.getElementById('customerPhone').value) {
+                document.getElementById('customerPhone').value = customer.phone;
+            }
+            
+            if (customer.photo) {
+                const img = document.getElementById('previewImage');
+                const preview = document.getElementById('photoPreview');
+                if (img && preview) {
+                    img.src = customer.photo;
+                    preview.style.display = 'block';
+                }
+            }
+            
+            showNotification(message);
+        }
+
+        function addOrUpdateCustomer(customerData, rideData) {
+            const existingIndex = customersDatabase.findIndex(c => 
+                c.phone === customerData.phone
+            );
+            
+            const fareAmount = parseFloat(rideData.fare.replace('$', '')) || 0;
+            
+            if (existingIndex >= 0) {
+                const customer = customersDatabase[existingIndex];
+                customer.name = customerData.name;
+                customer.totalRides += 1;
+                customer.totalSpent += fareAmount;
+                customer.lastRideDate = rideData.date;
+                
+                if (customerData.photo) {
+                    customer.photo = customerData.photo;
+                }
+                
+                console.log(`Updated repeat customer: ${customer.name}`);
+            } else {
+                const newCustomer = {
+                    id: Date.now(),
+                    name: customerData.name,
+                    phone: customerData.phone,
+                    photo: customerData.photo || null,
+                    totalRides: 1,
+                    totalSpent: fareAmount,
+                    firstRideDate: rideData.date,
+                    lastRideDate: rideData.date,
+                    addedAt: new Date().toISOString()
+                };
+                
+                customersDatabase.push(newCustomer);
+                console.log(`Added new customer: ${newCustomer.name}`);
+            }
+            
+            saveCustomersDatabase();
+        }
+
+        function displayCustomers() {
+            const container = document.getElementById('customersList');
+            
+            if (!container) {
+                console.error('Element "customersList" not found.');
+                return;
+            }
+
+            if (customersDatabase.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        👥 <strong>No customers in database yet</strong><br>
+                        Add rides to start building your customer database!
+                    </div>
+                `;
+                return;
+            }
+
+            const sortedCustomers = [...customersDatabase].sort((a, b) => b.totalRides - a.totalRides);
+
+            container.innerHTML = sortedCustomers.map(customer => {
+                const isLoyal = customer.totalRides >= 5;
+                const isRecent = customer.totalRides >= 2;
+                
+                let loyaltyBadge = '';
+                if (isLoyal) {
+                    loyaltyBadge = '<div style="background: linear-gradient(135deg, #f39c12, #e67e22); color: white; padding: 8px 15px; border-radius: 20px; font-size: 0.9em; font-weight: bold; margin: 10px 0;">⭐ LOYAL CUSTOMER</div>';
+                } else if (isRecent) {
+                    loyaltyBadge = '<div style="background: linear-gradient(135deg, #27ae60, #229954); color: white; padding: 8px 15px; border-radius: 20px; font-size: 0.9em; font-weight: bold; margin: 10px 0;">🔄 REPEAT CUSTOMER</div>';
+                }
+
+                let photoDisplay = '';
+                if (customer.photo) {
+                    photoDisplay = `
+                        <div style="text-align: center; margin: 15px 0;">
+                            <img src="${customer.photo}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 3px solid #3498db;">
+                        </div>
+                    `;
+                } else {
+                    photoDisplay = `
+                        <div style="text-align: center; margin: 15px 0; color: #666;">
+                            📷 No photo available
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="customer-card" style="margin: 15px 0;">
+                        <div class="customer-info">
+                            <div class="customer-name">${customer.name}</div>
+                            <div class="customer-details">📞 ${customer.phone}</div>
+                            
+                            ${photoDisplay}
+                            ${loyaltyBadge}
+                            
+                            <div class="route-info">
+                                <strong>📊 Customer Statistics</strong><br>
+                                🚗 <strong>Total Rides:</strong> ${customer.totalRides}<br>
+                                💰 <strong>Total Spent:</strong> $${customer.totalSpent.toFixed(2)}<br>
+                                📅 <strong>First Ride:</strong> ${new Date(customer.firstRideDate).toLocaleDateString()}<br>
+                                🗓️ <strong>Last Ride:</strong> ${new Date(customer.lastRideDate).toLocaleDateString()}<br>
+                                💵 <strong>Average Fare:</strong> $${(customer.totalSpent / customer.totalRides).toFixed(2)}
+                            </div>
+                            
+                            <div class="communication-buttons">
+                                <a href="tel:${customer.phone}" class="comm-btn comm-btn-call">📞 Call</a>
+                                <a href="sms:${customer.phone}?body=Hi ${customer.name}, this is your KTransport360 driver!" class="comm-btn comm-btn-text">💬 Text</a>
+                                <button class="comm-btn comm-btn-delay" onclick="scheduleRideForCustomer('${customer.phone}')">📅 New Ride</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function scheduleRideForCustomer(customerPhone) {
+            const customer = customersDatabase.find(c => c.phone === customerPhone);
+            if (!customer) {
+                showNotification('❌ Customer not found!');
+                return;
+            }
+
+            showAddRideModal();
+            
+            document.getElementById('customerName').value = customer.name;
+            document.getElementById('customerPhone').value = customer.phone;
+            
+            if (customer.photo) {
+                const img = document.getElementById('previewImage');
+                const preview = document.getElementById('photoPreview');
+                if (img && preview) {
+                    img.src = customer.photo;
+                    preview.style.display = 'block';
+                }
+            }
+
+            const isLoyal = customer.totalRides >= 5;
+            let message = `🎉 Scheduling ride for repeat customer: ${customer.name}`;
+            if (isLoyal) {
+                message += `\n⭐ LOYAL CUSTOMER (${customer.totalRides} rides) - Consider offering a discount!`;
+            }
+            showNotification(message);
+        }
+    </script>
+</body>
+</html>
