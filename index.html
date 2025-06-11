@@ -177,9 +177,29 @@
             opacity: 0.9;
         }
 
-        .truck-icon {
-            font-size: 28px;
-        }
+
+
+
+
+
+
+
+         .truck-icon {
+          display: inline-block;
+          margin-right: 8px;
+          vertical-align: middle;
+}
+
+          .logo-svg {
+          vertical-align: middle;
+}
+
+
+
+
+
+
+
 
         .status-badge {
             background: #4CAF50;
@@ -1289,27 +1309,29 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
             margin-top: 10px;
         }
 
-        .emergency-button {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 50px;
-            height: 50px;
-            background: #f44336;
-            border: none;
-            border-radius: 50%;
-            color: white;
-            font-size: 18px;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
-            z-index: 1000;
-            transition: all 0.2s;
-        }
 
-        .emergency-button:hover {
-            transform: scale(1.1);
-            background: #d32f2f;
-        }
+
+
+    .emergency-button {
+    position: fixed;
+    bottom: 80px;
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    background: #f44336;
+    border: none;
+    border-radius: 50%;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+    z-index: 1000;
+    transition: all 0.2s;
+}
+.emergency-button:hover {
+    transform: scale(1.1);
+    background: #d32f2f;
+}
 
 
 
@@ -1764,12 +1786,57 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
             ⚙️
         </button>
 
+
+
+
         <!-- Header -->
         <div class="header">
-            <h1>
-                <span class="truck-icon">🚛</span>
+           
+
+           <h1>
+               <span class="truck-icon">
+   <span class="truck-icon">
+    <svg width="28" height="28" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" class="logo-svg">
+        <!-- Green background circle -->
+        <circle cx="50" cy="50" r="48" fill="#4CAF50" stroke="#FF0000" stroke-width="2"/>
+        
+        <!-- Red car body -->
+        <g transform="translate(50,50) scale(0.8)">
+            <!-- Main car body -->
+            <path d="M -20 -8 L -15 -15 L 15 -15 L 20 -8 L 20 8 L -20 8 Z" fill="#FF0000" stroke="#000" stroke-width="1"/>
+            
+            <!-- Windshield -->
+            <path d="M -15 -15 L -10 -20 L 10 -20 L 15 -15 Z" fill="#333" stroke="#000" stroke-width="1"/>
+            
+            <!-- Hood lines -->
+            <line x1="-5" y1="-15" x2="-5" y2="-8" stroke="#000" stroke-width="1"/>
+            <line x1="0" y1="-15" x2="0" y2="-8" stroke="#000" stroke-width="1"/>
+            <line x1="5" y1="-15" x2="5" y2="-8" stroke="#000" stroke-width="1"/>
+            
+            <!-- Headlights -->
+            <rect x="-18" y="-6" width="3" height="4" fill="#FFFF00" stroke="#000" stroke-width="0.5"/>
+            <rect x="15" y="-6" width="3" height="4" fill="#FFFF00" stroke="#000" stroke-width="0.5"/>
+            
+            <!-- Grille -->
+            <rect x="-12" y="-8" width="24" height="4" fill="#000"/>
+            <line x1="-10" y1="-6" x2="10" y2="-6" stroke="#333" stroke-width="0.5"/>
+            
+            <!-- Wheels -->
+            <circle cx="-12" cy="10" r="4" fill="#333" stroke="#000" stroke-width="1"/>
+            <circle cx="12" cy="10" r="4" fill="#333" stroke="#000" stroke-width="1"/>
+            <circle cx="-12" cy="10" r="2" fill="#666"/>
+            <circle cx="12" cy="10" r="2" fill="#666"/>
+            
+            <!-- Side mirrors -->
+            <rect x="-22" y="-12" width="2" height="3" fill="#FF0000" stroke="#000" stroke-width="0.5"/>
+            <rect x="20" y="-12" width="2" height="3" fill="#FF0000" stroke="#000" stroke-width="0.5"/>
+        </g>
+    </svg>
+</span>
                 KTransport360 Driver
             </h1>
+           
+
             <p class="subtitle">Simple & Reliable Transport Management</p>
             <div class="status-badge">
                 App Ready - All data saved on your phone
@@ -1793,6 +1860,9 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
                     ✏️ Edit
                 </button>
             </div>
+
+
+
 
             <!-- Backup Status -->
             <div class="backup-status">
@@ -3576,9 +3646,94 @@ Here's **Part 2 of 6** (CSS continuation - navigation, modals, forms, and UI com
             console.log(`App is ${isOnline ? 'online' : 'offline'}.`);
         }
 
-        function triggerEmergency() {
-            showAlert('🚨 Emergency', 'Emergency alert triggered! This feature would usually contact predefined emergency contacts or services. (Demo action)');
-        }
+
+
+
+
+      function triggerEmergency() {
+    // Create custom emergency modal
+    const emergencyModal = document.createElement('div');
+    emergencyModal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        font-family: Arial, sans-serif;
+    `;
+    
+    emergencyModal.innerHTML = `
+        <div style="background: white; padding: 30px; border-radius: 15px; text-align: center; max-width: 300px; margin: 20px;">
+            <h2 style="color: #f44336; margin: 0 0 20px 0;">🚨 EMERGENCY</h2>
+            <p style="margin-bottom: 30px; font-size: 16px;">Choose emergency type:</p>
+            
+            <button onclick="call911()" style="
+                width: 100%; 
+                padding: 15px; 
+                margin: 10px 0; 
+                background: #f44336; 
+                color: white; 
+                border: none; 
+                border-radius: 8px; 
+                font-size: 16px; 
+                font-weight: bold;
+                cursor: pointer;
+            ">🚨 CALL 911 - LIFE THREATENING</button>
+            
+            <button onclick="callCompany()" style="
+                width: 100%; 
+                padding: 15px; 
+                margin: 10px 0; 
+                background: #ff9800; 
+                color: white; 
+                border: none; 
+                border-radius: 8px; 
+                font-size: 16px; 
+                font-weight: bold;
+                cursor: pointer;
+            ">📞 CALL COMPANY - VEHICLE/WORK ISSUE</button>
+            
+            <button onclick="closeEmergencyModal()" style="
+                width: 100%; 
+                padding: 15px; 
+                margin: 10px 0; 
+                background: #666; 
+                color: white; 
+                border: none; 
+                border-radius: 8px; 
+                font-size: 16px;
+                cursor: pointer;
+            ">❌ CANCEL</button>
+        </div>
+    `;
+    
+    document.body.appendChild(emergencyModal);
+    
+    // Add global functions for the buttons
+    window.call911 = function() {
+        closeEmergencyModal();
+        window.location.href = 'tel:911';
+    };
+    
+    window.callCompany = function() {
+        closeEmergencyModal();
+        window.location.href = 'tel:5597074669';
+    };
+    
+    window.closeEmergencyModal = function() {
+        document.body.removeChild(emergencyModal);
+    };
+}
+
+
+
+
+
 
         function toggleVoiceCommand() {
             isVoiceListening = !isVoiceListening;
