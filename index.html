@@ -13,6 +13,130 @@
             -webkit-tap-highlight-color: transparent; /* Removes tap highlight on mobile */
         }
 
+        // Setup photo handling for upload inputs
+        function setupPhotoHandling(inputId, previewId, imageId) {
+            const photoInput = document.getElementById(inputId);
+            if (photoInput) {
+                photoInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                            showNotification('❌ Photo too large! Please choose a photo under 5MB.');
+                            this.value = '';
+                            return;
+                        }
+
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const img = document.getElementById(imageId);
+                            const preview = document.getElementById(previewId);
+                            if (img && preview) {
+                                img.src = e.target.result;
+                                preview.style.display = 'block';
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            }
+        }
+
+        // Clear photo preview
+        function clearPhoto() {
+            document.getElementById('customerPhoto').value = '';
+            document.getElementById('photoPreview').style.display = 'none';
+        }
+
+        function clearReschedulePhoto() {
+            document.getElementById('rescheduleCustomerPhoto').value = '';
+            document.getElementById('reschedulePhotoPreview').style.display = 'none';
+        }
+
+        // Setup customer lookup functionality
+        function setupCustomerLookup() {
+            const nameInput = document.getElementById('customerName');
+            const phoneInput = document.getElementById('customerPhone');
+            
+            if (nameInput) {
+                nameInput.addEventListener('blur', function() {
+                    lookupCustomerByName(this.value.trim());
+                });
+            }
+            
+            if (phoneInput) {
+                phoneInput.addEventListener('blur', function() {
+                    lookupCustomerByPhone(this.value.trim());
+                });
+            }
+        }
+
+        // Look up customer by name
+        function lookupCustomerByName(name) {
+            if (!name) return;
+            
+            const customer = customersDatabase.find(c => 
+                c.name.toLowerCase() === name.toLowerCase()
+            );
+            
+            if (customer) {
+                showCustomerFound(customer);
+            }
+        }
+
+        // Look up customer by phone
+        function lookupCustomerByPhone(phone) {
+            if (!phone) return;
+            
+            const customer = customersDatabase.find(c => c.phone === phone);
+            
+            if (customer) {
+                showCustomerFound(customer);
+            }
+        }
+
+        // Show customer found notification and populate fields
+        function showCustomerFound(customer) {
+            const isRepeatCustomer = customer.totalRides > 0;
+            let message = `👋 Found customer: ${customer.name}`;
+            
+            if (isRepeatCustomer) {
+                message += `\n🎉 REPEAT CUSTOMER! (${customer.totalRides} previous rides)`;
+                message += `\n💰 Total spent: ${customer.totalSpent.toFixed(2)}`;
+                
+                if (customer.totalRides >= 5) {
+                    message += `\n⭐ LOYAL CUSTOMER - Consider offering a discount!`;
+                }
+            }
+            
+            // Auto-populate fields if they're empty
+            if (!document.getElementById('customerName').value) {
+                document.getElementById('customerName').value = customer.name;
+            }
+            if (!document.getElementById('customerPhone').value) {
+                document.getElementById('customerPhone').value = customer.phone;
+            }
+            
+            // Show photo if available
+            if (customer.photo) {
+                const img = document.getElementById('previewImage');
+                const preview = document.getElementById('photoPreview');
+                if (img && preview) {
+                    img.src = customer.photo;
+                    preview.style.display = 'block';
+                }
+            }
+            
+            showNotification(message);
+        }
+
+        // Add or update customer in database
+        function addOrUpdateCustomer(customerData, rideData) {
+            const existingIndex = customersDatabase.findIndex(c => 
+                c.phone === customerData.phone
+            );
+            
+            const fareAmount = parseFloat(rideData.fare.replace('
+
         /* Body and Overall Layout */
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -136,6 +260,11 @@
             color: white;
         }
 
+        .btn-analytics { /* New style for Analytics button */
+            background: linear-gradient(135deg, #f39c12, #e67e22); /* Orange gradient */
+            color: white;
+        }
+
         /* NEW: Style for Clear Completed Rides button */
         .btn-clear-completed {
             background: linear-gradient(135deg, #bdc3c7, #95a5a6); /* Light grey for clear */
@@ -199,6 +328,57 @@
             border-radius: 12px;
             margin: 15px 0;
             border-left: 5px solid #3498db; /* Blue left border */
+        }
+
+        /* Driver Notes Styling */
+        .driver-notes {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 2px solid #f39c12;
+            border-radius: 10px;
+            padding: 12px;
+            margin: 10px 0;
+            font-style: italic;
+            color: #856404;
+        }
+
+        /* Communication Buttons */
+        .communication-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .comm-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .comm-btn-call {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .comm-btn-text {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .comm-btn-delay {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
         }
 
         .customer-buttons {
@@ -449,7 +629,7 @@
             font-size: 1.1em;
         }
 
-        .input-group input, .input-group select {
+        .input-group input, .input-group select, .input-group textarea {
             width: 100%;
             padding: 15px;
             border: 2px solid #e9ecef;
@@ -457,9 +637,15 @@
             font-size: 1.1em;
             background: #f8f9fa;
             transition: all 0.3s ease;
+            font-family: inherit;
         }
 
-        .input-group input:focus, .input-group select:focus {
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
             outline: none;
             border-color: #3498db;
             background: white;
@@ -468,7 +654,8 @@
 
         /* NEW: Style for highlighting missing fields */
         .input-group input.missing-field,
-        .input-group select.missing-field {
+        .input-group select.missing-field,
+        .input-group textarea.missing-field {
             border-color: #e74c3c !important; /* Red border */
             box-shadow: 0 0 10px rgba(231, 76, 60, 0.4) !important; /* Red glow */
             background: #fffafa !important; /* Very light red background */
@@ -502,6 +689,72 @@
             opacity: 0.9;
         }
 
+        /* Analytics Styles */
+        .analytics-section {
+            margin-bottom: 30px;
+        }
+
+        .analytics-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .metric-card.highlight {
+            border-color: #f39c12;
+            background: linear-gradient(135deg, #fff9e6, #fef5d3);
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .location-list {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .location-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .location-item:last-child {
+            border-bottom: none;
+        }
+
         /* Media Queries for smaller screens (e.g., keyboard open) */
         @media (max-height: 600px) {
             .big-button {
@@ -529,7 +782,6 @@
         </div>
 
         <div class="main-content">
-            <!-- Home Screen -->
             <div id="homeScreen" class="screen active">
                 <div class="alert alert-success">
                     📱 <strong>READY TO GO!</strong><br>
@@ -546,6 +798,9 @@
                     <button class="big-button btn-future" onclick="showFutureRides()">
                         🔮<br>FUTURE<br>RIDES
                     </button>
+                    <button class="big-button btn-analytics" onclick="showAnalytics()">
+                        📊<br>ANALYTICS<br>& INSIGHTS
+                    </button>
                 </div>
 
                 <button class="big-button btn-add" onclick="showAddRideModal()">
@@ -561,11 +816,9 @@
                 </button>
 
                 <div class="stats-grid" id="statsGrid">
-                    <!-- Stats will be populated here -->
-                </div>
+                    </div>
             </div>
 
-            <!-- Today's Rides Screen -->
             <div id="todaysScreen" class="screen">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2>📅 Today's Rides</h2>
@@ -573,11 +826,9 @@
                 </div>
 
                 <div id="todaysRidesList">
-                    <!-- Rides will be populated here -->
-                </div>
+                    </div>
             </div>
 
-            <!-- Tomorrow's Rides Screen -->
             <div id="tomorrowsScreen" class="screen">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2>📆 Tomorrow's Rides</h2>
@@ -585,35 +836,76 @@
                 </div>
 
                 <div id="tomorrowsRidesList">
-                    <!-- Tomorrow's rides will be populated here -->
-                </div>
+                    </div>
             </div>
 
-            <!-- Future Rides Screen (NEW) -->
             <div id="futureScreen" class="screen">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2>🔮 Future Rides</h2>
-                    <!-- No specific date display here, as it's for multiple future dates -->
-                </div>
+                    </div>
 
                 <div id="futureRidesList">
-                    <!-- Future rides will be populated here -->
+                    </div>
+            </div>
+
+            <div id="analyticsScreen" class="screen">
+                <h2>📊 Analytics & Business Insights</h2>
+                
+                <div class="analytics-section">
+                    <h3>📈 Financial Overview</h3>
+                    <div class="analytics-grid" id="financialMetrics">
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>🕒 Time & Productivity</h3>
+                    <div class="analytics-grid" id="timeMetrics">
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>📍 Location Insights</h3>
+                    <div class="analytics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Most Popular Pickup Locations</div>
+                            <div class="location-list" id="topPickupLocations">
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Most Popular Drop-off Locations</div>
+                            <div class="location-list" id="topDropoffLocations">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>📅 Weekly Trends</h3>
+                    <div class="analytics-grid" id="weeklyTrends">
+                    </div>
+                </div>
+            <div id="customersScreen" class="screen">
+                <h2>👥 Customer Database</h2>
+                
+                <div class="alert alert-info" style="margin-bottom: 20px;">
+                    📊 <strong>Customer Management</strong><br>
+                    View all customers, their photos, and ride history
+                </div>
+
+                <div id="customersList">
                 </div>
             </div>
         </div>
 
-        <!-- Completed Rides Modal -->
         <div id="completedRidesModal" class="modal">
             <div class="modal-content">
                 <span class="close" onclick="closeCompletedRidesModal()">&times;</span>
                 <h2>✅ Today's Completed Rides</h2>
                 <div id="completedRidesDetails">
-                    <!-- Completed rides details will be populated here -->
-                </div>
+                    </div>
             </div>
         </div>
 
-        <!-- Cancel Confirmation Modal -->
         <div id="cancelConfirmModal" class="modal">
             <div class="modal-content">
                 <h2>❌ Cancel Ride</h2>
@@ -631,7 +923,6 @@
             </div>
         </div>
 
-        <!-- Reschedule Ride Modal -->
         <div id="rescheduleRideModal" class="modal">
             <div class="modal-content">
                 <span class="close" onclick="closeRescheduleModal()">&times;</span>
@@ -644,7 +935,16 @@
 
                 <div class="input-group">
                     <label for="rescheduleCustomerPhone">Phone Number</label>
-                    <input type="tel" id="rescheduleCustomerPhone" placeholder="(904) 555-0123">
+                    <input type="tel" inputmode="tel" id="rescheduleCustomerPhone" placeholder="(904) 555-0123">
+                </div>
+
+                <div class="input-group">
+                    <label for="rescheduleCustomerPhoto">Customer Photo (Optional)</label>
+                    <input type="file" id="rescheduleCustomerPhoto" accept="image/*" capture="user">
+                    <div id="reschedulePhotoPreview" style="margin-top: 10px; display: none;">
+                        <img id="reschedulePreviewImage" style="max-width: 150px; max-height: 150px; border-radius: 10px; border: 2px solid #ddd;">
+                        <button type="button" onclick="clearReschedulePhoto()" style="display: block; margin-top: 5px; padding: 5px 10px; background: #e74c3c; color: white; border: none; border-radius: 5px; font-size: 0.9em;">Remove Photo</button>
+                    </div>
                 </div>
 
                 <div class="input-group">
@@ -672,13 +972,17 @@
                     <input type="text" id="rescheduleFareAmount" placeholder="$45.00">
                 </div>
 
+                <div class="input-group">
+                    <label for="rescheduleDriverNotes">Driver Notes (Optional)</label>
+                    <textarea id="rescheduleDriverNotes" placeholder="Special instructions, customer preferences, payment method, etc."></textarea>
+                </div>
+
                 <button class="big-button btn-reschedule" onclick="saveRescheduledRide()">
                     📅 Update Ride
                 </button>
             </div>
         </div>
 
-        <!-- Add Ride Modal -->
         <div id="addRideModal" class="modal">
             <div class="modal-content">
                 <span class="close" onclick="closeModal()">&times;</span>
@@ -691,7 +995,16 @@
 
                 <div class="input-group">
                     <label for="customerPhone">Phone Number</label>
-                    <input type="tel" id="customerPhone" placeholder="(904) 555-0123">
+                    <input type="tel" inputmode="tel" id="customerPhone" placeholder="(904) 555-0123">
+                </div>
+
+                <div class="input-group">
+                    <label for="customerPhoto">Customer Photo (Optional)</label>
+                    <input type="file" id="customerPhoto" accept="image/*" capture="user">
+                    <div id="photoPreview" style="margin-top: 10px; display: none;">
+                        <img id="previewImage" style="max-width: 150px; max-height: 150px; border-radius: 10px; border: 2px solid #ddd;">
+                        <button type="button" onclick="clearPhoto()" style="display: block; margin-top: 5px; padding: 5px 10px; background: #e74c3c; color: white; border: none; border-radius: 5px; font-size: 0.9em;">Remove Photo</button>
+                    </div>
                 </div>
 
                 <div class="input-group">
@@ -706,20 +1019,22 @@
 
                 <div class="input-group">
                     <label for="pickupLocationInput">Pickup Location</label>
-                    <!-- Changed from select to input with datalist for custom entries -->
                     <input type="text" id="pickupLocationInput" list="commonLocationsDatalist" placeholder="Select or type a pickup location">
                 </div>
 
                 <div class="input-group">
                     <label for="dropoffLocationInput">Drop-off Location</label>
-                    <!-- Changed from select to input with datalist for custom entries -->
                     <input type="text" id="dropoffLocationInput" list="commonLocationsDatalist" placeholder="Select or type a drop-off location">
                 </div>
 
                 <div class="input-group">
                     <label for="fareAmount">Fare Amount</label>
-                    <!-- Added id to make it easier to target for JavaScript -->
                     <input type="text" id="fareAmount" placeholder="$45.00">
+                </div>
+
+                <div class="input-group">
+                    <label for="driverNotes">Driver Notes (Optional)</label>
+                    <textarea id="driverNotes" placeholder="Special instructions, customer preferences, payment method, etc."></textarea>
                 </div>
 
                 <button class="big-button btn-add" onclick="saveNewRide()">
@@ -728,15 +1043,38 @@
             </div>
         </div>
 
-        <!-- Notification -->
+        <div id="delayNoticeModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeDelayModal()">&times;</span>
+                <h2>⏰ Send Delay Notice</h2>
+                <p style="margin-bottom: 20px;">Choose a delay reason to send to the customer:</p>
+                
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <button class="comm-btn comm-btn-delay" onclick="sendDelayNotice('traffic')">
+                        🚗 Traffic Delay (10-15 min)
+                    </button>
+                    <button class="comm-btn comm-btn-delay" onclick="sendDelayNotice('previous')">
+                        📅 Previous Ride Running Late
+                    </button>
+                    <button class="comm-btn comm-btn-delay" onclick="sendDelayNotice('weather')">
+                        🌧️ Weather Conditions
+                    </button>
+                    <button class="comm-btn comm-btn-delay" onclick="sendDelayNotice('vehicle')">
+                        🔧 Vehicle Issue (Minor)
+                    </button>
+                    <button class="comm-btn comm-btn-delay" onclick="sendDelayNotice('custom')">
+                        ✏️ Custom Message
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <div id="notification" class="notification">
             📱 Ride saved!
         </div>
 
-        <!-- This datalist provides autocomplete suggestions for location inputs -->
         <datalist id="commonLocationsDatalist"></datalist>
 
-        <!-- Bottom Navigation -->
         <div class="bottom-nav">
             <button class="nav-item active" onclick="showHome()">
                 🏠<br>Home
@@ -750,6 +1088,12 @@
             <button class="nav-item" onclick="showFutureRides()">
                 🔮<br>Future
             </button>
+            <button class="nav-item" onclick="showAnalytics()">
+                📊<br>Analytics
+            </button>
+            <button class="nav-item" onclick="showCustomers()">
+                👥<br>Customers
+            </button>
         </div>
     </div>
 
@@ -761,49 +1105,20 @@
         // App Data Storage
         let ridesData = [];
         let commonLocations = [];
+        let customersDatabase = [];
         let rideToCancel = null; // Store the ride being cancelled
         let rideToReschedule = null; // Store the ride being rescheduled
+        let currentDelayRide = null; // Store the ride for delay notice
 
-        // Key for storing common locations in localStorage
+        // Key for storing data in localStorage
         const COMMON_LOCATIONS_STORAGE_KEY = 'ktransport360_common_locations';
+        const CUSTOMERS_DATABASE_KEY = 'ktransport360_customers';
 
-        // Helper function to get local date string in YYYY-MM-DD format
-        function getLocalDateString(date = new Date()) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        // Helper function to get tomorrow's date string
-        function getTomorrowDateString() {
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            return getLocalDateString(tomorrow);
-        }
-
-        // Helper function to get day after tomorrow's date string
-        function getDayAfterTomorrowDateString() {
-            const dayAfterTomorrow = new Date();
-            dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
-            return getLocalDateString(dayAfterTomorrow);
-        }
-
-        // Helper function to format date for display (e.g., "June 12, 2025")
-        function formatDateForDisplay(dateString) {
-            if (!dateString) return '';
-            // Parse the YYYY-MM-DD format
-            const dateParts = dateString.split('-');
-            const year = parseInt(dateParts[0]);
-            const month = parseInt(dateParts[1]) - 1; // JavaScript months are 0-indexed
-            const day = parseInt(dateParts[2]);
-            
-            const date = new Date(year, month, day);
-            return date.toLocaleDateString('en-US', { 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-            });
+        // Helper to get a date string (YYYY-MM-DD) for a given date, normalized to midnight
+        function getNormalizedDateString(date) {
+            const d = new Date(date);
+            d.setHours(0, 0, 0, 0); // Set to midnight
+            return d.toISOString().split('T')[0];
         }
 
         // Initialize App
@@ -813,6 +1128,7 @@
             // Load data from localStorage (rides and common locations)
             loadData(); // Load rides data (pending uploads are no longer loaded)
             loadCommonLocationsData(); // Load/initialize common locations from localStorage/defaults
+            loadCustomersDatabase(); // Load customer database
             
             // If no rides are loaded from localStorage, initialize with an empty list.
             if (ridesData.length === 0) {
@@ -826,9 +1142,9 @@
             const tomorrow = new Date(today);
             tomorrow.setDate(tomorrow.getDate() + 1);
             
-            document.getElementById('todaysDate').textContent = today.toLocaleDateString();
-            document.getElementById('tomorrowsDate').textContent = tomorrow.toLocaleDateString();
-            document.getElementById('pickupDate').value = getLocalDateString(today); // Default new ride date to today
+            document.getElementById('todaysDate').textContent = getNormalizedDateString(today); // Use helper
+            document.getElementById('tomorrowsDate').textContent = getNormalizedDateString(tomorrow); // Use helper
+            document.getElementById('pickupDate').value = getNormalizedDateString(today); // Default new ride date to today
             
             // Initialize display
             updateStats();
@@ -844,6 +1160,13 @@
             // Add event listeners for phone formatting - both add and reschedule modals
             setupPhoneFormatting('customerPhone');
             setupPhoneFormatting('rescheduleCustomerPhone');
+
+            // Add event listeners for photo uploads
+            setupPhotoHandling('customerPhoto', 'photoPreview', 'previewImage');
+            setupPhotoHandling('rescheduleCustomerPhoto', 'reschedulePhotoPreview', 'reschedulePreviewImage');
+
+            // Add customer lookup event listeners
+            setupCustomerLookup();
         });
 
         // Setup fare amount formatting for a given input ID
@@ -873,9 +1196,9 @@
 
                     // Prepend $ for display
                     if (!value.startsWith('$')) { // Only add $ if not already there
-                         this.value = '$' + value;
+                            this.value = '$' + value;
                     } else {
-                         this.value = value;
+                            this.value = value;
                     }
                 });
 
@@ -1032,6 +1355,32 @@
             }
         }
 
+        // Function to load customers database from localStorage
+        function loadCustomersDatabase() {
+            try {
+                const savedCustomers = localStorage.getItem(CUSTOMERS_DATABASE_KEY);
+                if (savedCustomers) {
+                    customersDatabase = JSON.parse(savedCustomers);
+                    console.log('Customers database loaded:', customersDatabase.length, 'customers.');
+                } else {
+                    customersDatabase = [];
+                }
+            } catch (error) {
+                console.error('Error loading customers database from localStorage:', error);
+                customersDatabase = [];
+            }
+        }
+
+        // Function to save customers database to localStorage
+        function saveCustomersDatabase() {
+            try {
+                localStorage.setItem(CUSTOMERS_DATABASE_KEY, JSON.stringify(customersDatabase));
+                console.log('Customers database saved to localStorage.');
+            } catch (error) {
+                console.error('Error saving customers database to localStorage:', error);
+            }
+        }
+
         // Load data from localStorage (this handles ridesData)
         function loadData() {
             try {
@@ -1136,10 +1485,28 @@
             displayFutureRides();
         }
 
+        // Function to show Analytics
+        function showAnalytics() {
+            console.log('Showing analytics screen.');
+            hideAllScreens();
+            document.getElementById('analyticsScreen').classList.add('active');
+            setActiveNav(4); // 5th item in bottom nav
+            displayAnalytics();
+        }
+
+        // Function to show Customers Database
+        function showCustomers() {
+            console.log('Showing customers database screen.');
+            hideAllScreens();
+            document.getElementById('customersScreen').classList.add('active');
+            setActiveNav(5); // 6th item in bottom nav
+            displayCustomers();
+        }
+
         // Update statistics on the home screen
         function updateStats() {
             console.log('Updating statistics.');
-            const today = getLocalDateString();
+            const today = getNormalizedDateString(new Date());
             const todaysRides = ridesData.filter(ride => ride.date === today);
             
             const totalRides = todaysRides.length;
@@ -1177,9 +1544,10 @@
         // Display today's rides in their dedicated section
         function displayTodaysRides() {
             console.log('Rendering today\'s rides.');
-            const today = getLocalDateString();
+            const todayNormalized = getNormalizedDateString(new Date());
+            
             const todaysRides = ridesData
-                                .filter(ride => ride.date === today)
+                                .filter(ride => ride.date === todayNormalized)
                                 .sort((a, b) => { // Sort by scheduledTime
                                     const timeA = new Date(`1970/01/01 ${a.scheduledTime}`).getTime();
                                     const timeB = new Date(`1970/01/01 ${b.scheduledTime}`).getTime();
@@ -1221,21 +1589,18 @@
         // Display tomorrow's rides in their dedicated section
         function displayTomorrowsRides() {
             console.log('Rendering tomorrow\'s rides.');
-            const tomorrowDate = getTomorrowDateString();
-            console.log('Tomorrow date string:', tomorrowDate); // Debug log
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1); // Set to tomorrow's date
+            const tomorrowNormalized = getNormalizedDateString(tomorrow);
             
             const tomorrowsRides = ridesData
-                                    .filter(ride => {
-                                        console.log('Checking ride date:', ride.date, 'against tomorrow:', tomorrowDate); // Debug log
-                                        return ride.date === tomorrowDate;
-                                    })
+                                    .filter(ride => ride.date === tomorrowNormalized)
                                     .sort((a, b) => { // Sort by scheduledTime
                                         const timeA = new Date(`1970/01/01 ${a.scheduledTime}`).getTime();
                                         const timeB = new Date(`1970/01/01 ${b.scheduledTime}`).getTime();
                                         return timeA - timeB;
                                     });
-
-            console.log('Tomorrow\'s rides found:', tomorrowsRides.length); // Debug log
 
             const container = document.getElementById('tomorrowsRidesList');
             if (!container) {
@@ -1259,14 +1624,16 @@
         // Display future rides (beyond tomorrow)
         function displayFutureRides() {
             console.log('Rendering future rides.');
-            const dayAfterTomorrowString = getDayAfterTomorrowDateString();
-            console.log('Day after tomorrow string:', dayAfterTomorrowString); // Debug log
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            
+            const dayAfterTomorrow = new Date(tomorrow);
+            dayAfterTomorrow.setDate(tomorrow.getDate() + 1); // This correctly gets the day after tomorrow.
+            const dayAfterTomorrowNormalized = getNormalizedDateString(dayAfterTomorrow);
 
             const futureRides = ridesData
-                                .filter(ride => {
-                                    console.log('Checking ride date:', ride.date, 'against day after tomorrow:', dayAfterTomorrowString); // Debug log
-                                    return ride.date >= dayAfterTomorrowString; // String comparison for dates >= day after tomorrow
-                                })
+                                .filter(ride => ride.date >= dayAfterTomorrowNormalized)
                                 .sort((a, b) => { // Sort by date string, then by scheduledTime
                                     if (a.date !== b.date) {
                                         return a.date.localeCompare(b.date); // String comparison for dates
@@ -1275,8 +1642,6 @@
                                     const timeB = new Date(`1970/01/01 ${b.scheduledTime}`).getTime();
                                     return timeA - timeB;
                                 });
-
-            console.log('Future rides found:', futureRides.length); // Debug log
 
             const container = document.getElementById('futureRidesList');
             if (!container) {
@@ -1297,11 +1662,144 @@
             container.innerHTML = futureRides.map(ride => createRideCard(ride, false)).join(''); // No missed rides for future
         }
 
+        // Display analytics screen
+        function displayAnalytics() {
+            console.log('Rendering analytics screen.');
+            const completedRides = ridesData.filter(ride => ride.status === 'completed');
+            
+            if (completedRides.length === 0) {
+                document.getElementById('financialMetrics').innerHTML = `
+                    <div class="alert alert-info">
+                        📊 <strong>No completed rides yet</strong><br>
+                        Complete some rides to see your analytics!
+                    </div>
+                `;
+                return;
+            }
+
+            // Calculate financial metrics
+            const totalEarnings = completedRides.reduce((sum, ride) => {
+                return sum + (parseFloat(ride.fare.replace('$', '')) || 0);
+            }, 0);
+
+            const avgFare = totalEarnings / completedRides.length;
+            const highestFare = Math.max(...completedRides.map(ride => parseFloat(ride.fare.replace('$', '')) || 0));
+
+            // Calculate time metrics
+            const today = getNormalizedDateString(new Date());
+            const todaysCompletedRides = completedRides.filter(ride => ride.date === today);
+            
+            // Get ride counts by day of week
+            const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const rideDays = {};
+            completedRides.forEach(ride => {
+                const rideDate = new Date(ride.date);
+                const dayName = weekdays[rideDate.getDay()];
+                rideDays[dayName] = (rideDays[dayName] || 0) + 1;
+            });
+
+            // Find busiest day
+            let busiestDay = 'Not enough data';
+            let maxRides = 0;
+            Object.entries(rideDays).forEach(([day, count]) => {
+                if (count > maxRides) {
+                    maxRides = count;
+                    busiestDay = day;
+                }
+            });
+
+            // Calculate location statistics
+            const pickupCounts = {};
+            const dropoffCounts = {};
+            
+            completedRides.forEach(ride => {
+                const pickup = ride.pickupLocation;
+                const dropoff = ride.dropoffLocation;
+                pickupCounts[pickup] = (pickupCounts[pickup] || 0) + 1;
+                dropoffCounts[dropoff] = (dropoffCounts[dropoff] || 0) + 1;
+            });
+
+            // Sort locations by frequency
+            const topPickups = Object.entries(pickupCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+            
+            const topDropoffs = Object.entries(dropoffCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            // Update financial metrics
+            document.getElementById('financialMetrics').innerHTML = `
+                <div class="metric-card highlight">
+                    <div class="metric-value">$${totalEarnings.toFixed(2)}</div>
+                    <div class="metric-label">Total Earnings</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">$${avgFare.toFixed(2)}</div>
+                    <div class="metric-label">Average Fare</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">$${highestFare.toFixed(2)}</div>
+                    <div class="metric-label">Highest Fare</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">$${(todaysCompletedRides.reduce((sum, ride) => sum + (parseFloat(ride.fare.replace('$', '')) || 0), 0)).toFixed(2)}</div>
+                    <div class="metric-label">Today's Earnings</div>
+                </div>
+            `;
+
+            // Update time metrics
+            document.getElementById('timeMetrics').innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-value">${completedRides.length}</div>
+                    <div class="metric-label">Total Completed Rides</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${todaysCompletedRides.length}</div>
+                    <div class="metric-label">Today's Completed</div>
+                </div>
+                <div class="metric-card highlight">
+                    <div class="metric-value">${busiestDay}</div>
+                    <div class="metric-label">Busiest Day (${maxRides} rides)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${(completedRides.length / Math.max(1, Object.keys(rideDays).length)).toFixed(1)}</div>
+                    <div class="metric-label">Avg Rides/Day</div>
+                </div>
+            `;
+
+            // Update pickup locations
+            document.getElementById('topPickupLocations').innerHTML = topPickups.length > 0 ? 
+                topPickups.map(([location, count]) => `
+                    <div class="location-item">
+                        <span>${location.length > 30 ? location.substring(0, 30) + '...' : location}</span>
+                        <strong>${count} rides</strong>
+                    </div>
+                `).join('') : '<div style="text-align: center; color: #666;">No data yet</div>';
+
+            // Update dropoff locations
+            document.getElementById('topDropoffLocations').innerHTML = topDropoffs.length > 0 ? 
+                topDropoffs.map(([location, count]) => `
+                    <div class="location-item">
+                        <span>${location.length > 30 ? location.substring(0, 30) + '...' : location}</span>
+                        <strong>${count} rides</strong>
+                    </div>
+                `).join('') : '<div style="text-align: center; color: #666;">No data yet</div>';
+
+            // Update weekly trends
+            document.getElementById('weeklyTrends').innerHTML = weekdays.map(day => `
+                <div class="metric-card">
+                    <div class="metric-value">${rideDays[day] || 0}</div>
+                    <div class="metric-label">${day}</div>
+                </div>
+            `).join('');
+        }
 
         // Generates the HTML string for a single ride card
         function createRideCard(ride, isMissed = false) {
             const statusClass = ride.status.replace('-', ''); // Converts 'picked-up' to 'pickedup' for CSS class
             let actionButtons = '';
+            let communicationButtons = '';
             let missedTag = '';
             let cardClasses = `${ride.status === 'picked-up' ? 'active-ride' : ''} ${ride.status === 'completed' ? 'completed' : ''}`;
 
@@ -1315,16 +1813,30 @@
                 `;
             }
 
-            // Determine which day this ride is for using our helper functions
-            const rideDate = ride.date;
-            const today = getLocalDateString();
-            const tomorrowDate = getTomorrowDateString();
+            // Determine which day this ride is for
+            const rideDate = ride.date; // ride.date is already YYYY-MM-DD
+            const todayNormalized = getNormalizedDateString(new Date());
+            const tomorrow = new Date();
+            tomorrow.setDate(new Date().getDate() + 1);
+            const tomorrowNormalized = getNormalizedDateString(tomorrow);
 
-            // Format the pickup date for display
-            const formattedPickupDate = formatDateForDisplay(ride.date);
+            // Format the ride date for display
+            // Using toLocaleDateString for a user-friendly format (e.g., "6/12/2025")
+            const displayRideDate = new Date(ride.date + 'T00:00:00').toLocaleDateString();
+
+            // Add communication buttons for today's and tomorrow's rides
+            if (rideDate === todayNormalized || rideDate === tomorrowNormalized) {
+                communicationButtons = `
+                    <div class="communication-buttons">
+                        <a href="tel:${ride.phone}" class="comm-btn comm-btn-call">📞 Call</a>
+                        <a href="sms:${ride.phone}?body=Hi ${ride.name}, this is your KTransport360 driver. I'm on my way to pick you up!" class="comm-btn comm-btn-text">💬 Text</a>
+                        <button class="comm-btn comm-btn-delay" onclick="showDelayModal(${ride.id})">⏰ Delay Notice</button>
+                    </div>
+                `;
+            }
 
             // Different button logic based on the day and status
-            if (rideDate === today) { // TODAY'S RIDES
+            if (rideDate === todayNormalized) { // TODAY'S RIDES
                 if (ride.status === 'scheduled' && !isMissed) {
                     actionButtons = `
                         <button class="btn-pickup" onclick="pickupCustomer(${ride.id})">
@@ -1341,7 +1853,7 @@
                         </button>
                     `;
                 }
-            } else if (rideDate === tomorrowDate || rideDate > tomorrowDate) { // TOMORROW'S RIDES OR FUTURE RIDES
+            } else if (rideDate === tomorrowNormalized || rideDate > tomorrowNormalized) { // TOMORROW'S RIDES OR FUTURE RIDES
                 if (ride.status === 'scheduled') {
                     actionButtons = `
                         <button class="btn-reschedule" onclick="rescheduleRide(${ride.id})">
@@ -1354,13 +1866,50 @@
                 }
             }
 
-            // If no buttons were set (completed rides, missed rides), show status info
+            // If no buttons were set (completed rides, or future/tomorrow rides that aren't 'scheduled'), show status info
             if (!actionButtons) {
+                // Parse date manually to avoid timezone issues
+                const dateParts = ride.date.split('-'); // "YYYY-MM-DD" -> ["YYYY", "MM", "DD"]
+                const displayDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2])).toLocaleDateString();
                 actionButtons = `
                     <div style="text-align: center; color: #3498db; font-weight: bold; font-size: 1.2em; padding: 20px;">
-                        📅 SCHEDULED FOR ${formattedPickupDate}
+                        📅 SCHEDULED FOR ${displayDate}
                     </div>
                 `;
+            }
+
+            // Driver notes display
+            let notesDisplay = '';
+            if (ride.notes && ride.notes.trim()) {
+                notesDisplay = `
+                    <div class="driver-notes">
+                        📝 <strong>Driver Notes:</strong> ${ride.notes}
+                    </div>
+                `;
+            }
+
+            // Customer photo and repeat customer check
+            const customer = customersDatabase.find(c => c.phone === ride.phone);
+            let customerPhotoDisplay = '';
+            let repeatCustomerBadge = '';
+            
+            if (customer) {
+                if (customer.photo) {
+                    customerPhotoDisplay = `
+                        <div style="text-align: center; margin: 10px 0;">
+                            <img src="${customer.photo}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; border: 2px solid #3498db;">
+                        </div>
+                    `;
+                }
+                
+                if (customer.totalRides > 1) {
+                    const isLoyal = customer.totalRides >= 5;
+                    repeatCustomerBadge = `
+                        <div style="background: ${isLoyal ? 'linear-gradient(135deg, #f39c12, #e67e22)' : 'linear-gradient(135deg, #27ae60, #229954)'}; color: white; padding: 8px 12px; border-radius: 15px; font-size: 0.8em; font-weight: bold; margin: 8px 0; text-align: center;">
+                            ${isLoyal ? '⭐ LOYAL' : '🔄 REPEAT'} CUSTOMER (${customer.totalRides} rides)
+                        </div>
+                    `;
+                }
             }
 
             return `
@@ -1369,23 +1918,85 @@
                     <div class="customer-info">
                         <div class="customer-name">${ride.name}</div>
                         <div class="customer-details">📞 ${ride.phone}</div>
+                        ${customerPhotoDisplay}
+                        ${repeatCustomerBadge}
                         <div class="route-info">
-                            📅 <strong>${formattedPickupDate}</strong><br>
+                            <strong style="display: block; margin-bottom: 5px;">🗓️ ${displayRideDate}</strong>
                             <strong>⏰ ${ride.scheduledTime}</strong><br>
                             📍 <strong>From:</strong> ${ride.pickupLocation}<br>
                             🎯 <strong>To:</strong> ${ride.dropoffLocation}
                         </div>
+                        ${notesDisplay}
                         ${ride.fare ? `<div class="fare-display">💰 Fare: ${ride.fare}</div>` : ''}
                         <span class="status-badge status-${statusClass}">${ride.status.replace('-', ' ').toUpperCase()}</span>
                         ${ride.pickupTime ? `<div class="time-display">🟢 <strong>Picked up:</strong> ${ride.pickupTime}</div>` : ''}
                         ${ride.dropoffTime ? `<div class="time-display">🔵 <strong>Dropped off:</strong> ${ride.dropoffTime}</div>` : ''}
                     </div>
                     
+                    ${communicationButtons}
+                    
                     <div class="customer-buttons">
                         ${actionButtons}
                     </div>
                 </div>
             `;
+        }
+
+        // Show delay notice modal
+        function showDelayModal(rideId) {
+            const ride = ridesData.find(r => r.id === rideId);
+            if (!ride) {
+                showNotification('❌ Error: Ride not found!');
+                return;
+            }
+            currentDelayRide = ride;
+            document.getElementById('delayNoticeModal').classList.add('show');
+        }
+
+        // Close delay modal
+        function closeDelayModal() {
+            document.getElementById('delayNoticeModal').classList.remove('show');
+            currentDelayRide = null;
+        }
+
+        // Send delay notice
+        function sendDelayNotice(delayType) {
+            if (!currentDelayRide) {
+                showNotification('❌ Error: No ride selected for delay notice!');
+                return;
+            }
+
+            let message = '';
+            const customerName = currentDelayRide.name;
+
+            switch(delayType) {
+                case 'traffic':
+                    message = `Hi ${customerName}, this is your KTransport360 driver. I'm running 10-15 minutes late due to heavy traffic. Thank you for your patience!`;
+                    break;
+                case 'previous':
+                    message = `Hi ${customerName}, this is your KTransport360 driver. My previous ride is running a bit late, so I'll be about 10 minutes behind schedule. Sorry for the delay!`;
+                    break;
+                case 'weather':
+                    message = `Hi ${customerName}, this is your KTransport360 driver. Due to weather conditions, I'm running slightly behind schedule. I'll be there soon!`;
+                    break;
+                case 'vehicle':
+                    message = `Hi ${customerName}, this is your KTransport360 driver. I had a minor vehicle issue that's now resolved, but I'm running about 15 minutes late. Thank you for understanding!`;
+                    break;
+                case 'custom':
+                    message = prompt('Enter your custom delay message:');
+                    if (!message) {
+                        closeDelayModal();
+                        return;
+                    }
+                    break;
+            }
+
+            // Open SMS with pre-filled message
+            const smsUrl = `sms:${currentDelayRide.phone}?body=${encodeURIComponent(message)}`;
+            window.open(smsUrl);
+
+            closeDelayModal();
+            showNotification(`📱 Delay notice sent to ${customerName}!`);
         }
 
         // Handle customer pickup action
@@ -1534,6 +2145,18 @@
             document.getElementById('reschedulePickupLocationInput').value = ride.pickupLocation;
             document.getElementById('rescheduleDropoffLocationInput').value = ride.dropoffLocation;
             document.getElementById('rescheduleFareAmount').value = ride.fare;
+            document.getElementById('rescheduleDriverNotes').value = ride.notes || '';
+
+            // Show existing customer photo if available
+            const customer = customersDatabase.find(c => c.phone === ride.phone);
+            if (customer && customer.photo) {
+                const img = document.getElementById('reschedulePreviewImage');
+                const preview = document.getElementById('reschedulePhotoPreview');
+                if (img && preview) {
+                    img.src = customer.photo;
+                    preview.style.display = 'block';
+                }
+            }
 
             // Clear any previous highlighting
             document.querySelectorAll('.missing-field').forEach(el => {
@@ -1586,6 +2209,7 @@
             const pickupLocationInput = document.getElementById('reschedulePickupLocationInput');
             const dropoffLocationInput = document.getElementById('rescheduleDropoffLocationInput');
             const fareAmountInput = document.getElementById('rescheduleFareAmount');
+            const driverNotesInput = document.getElementById('rescheduleDriverNotes');
 
             // Get trimmed values
             const name = customerNameInput.value.trim();
@@ -1595,6 +2219,7 @@
             const pickup = pickupLocationInput.value.trim();
             const dropoff = dropoffLocationInput.value.trim();
             const fare = fareAmountInput.value.trim();
+            const notes = driverNotesInput.value.trim();
 
             let missingFields = false; // Flag to track if any fields are missing
 
@@ -1642,42 +2267,71 @@
                 addLocationIfNew(dropoff);
             }
 
-            // Format fare to ensure it has a $ sign and is a valid number (e.g., "$45.00")
-            let formattedFare = '';
-            const fareNum = parseFloat(fare.replace(/[^0-9.]/g, '')); // Remove non-numeric except dot
-            if (!isNaN(fareNum)) {
-                formattedFare = `$${fareNum.toFixed(2)}`;
+            // Get photo data if uploaded
+            let photoData = null;
+            const photoInput = document.getElementById('customerPhoto');
+            if (photoInput.files && photoInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    photoData = e.target.result;
+                    proceedWithSave();
+                };
+                reader.readAsDataURL(photoInput.files[0]);
+                return; // Wait for photo to load
             } else {
-                formattedFare = '$0.00'; // Default to $0.00 if fare is invalid/empty
+                proceedWithSave();
             }
-            
-            // Update the existing ride with new information
-            rideToReschedule.name = name;
-            rideToReschedule.phone = phone;
-            rideToReschedule.pickupLocation = pickup;
-            rideToReschedule.dropoffLocation = dropoff;
-            rideToReschedule.date = date;
-            rideToReschedule.scheduledTime = formatTime(time);
-            rideToReschedule.fare = formattedFare;
-            // Keep the same ID and other properties
-            
-            saveData(); // Persist the updated data
 
-            closeRescheduleModal(); // Close the reschedule modal
-            showNotification(`📅 Ride for ${name} has been rescheduled!`);
-            updateStats(); // Update home screen statistics
-            
-            // Refresh all ride screens since the ride may have moved between days
-            displayTodaysRides();
-            displayTomorrowsRides();
-            displayFutureRides();
+            function proceedWithSave() {
+            function proceedWithReschedule() {
+                // Format fare to ensure it has a $ sign and is a valid number (e.g., "$45.00")
+                let formattedFare = '';
+                const fareNum = parseFloat(fare.replace(/[^0-9.]/g, '')); // Remove non-numeric except dot
+                if (!isNaN(fareNum)) {
+                    formattedFare = `${fareNum.toFixed(2)}`;
+                } else {
+                    formattedFare = '$0.00'; // Default to $0.00 if fare is invalid/empty
+                }
+                
+                // Update the existing ride with new information
+                rideToReschedule.name = name;
+                rideToReschedule.phone = phone;
+                rideToReschedule.pickupLocation = pickup;
+                rideToReschedule.dropoffLocation = dropoff;
+                rideToReschedule.date = date;
+                rideToReschedule.scheduledTime = formatTime(time);
+                rideToReschedule.fare = formattedFare;
+                rideToReschedule.notes = notes;
+                // Keep the same ID and other properties
+                
+                saveData(); // Persist the updated data
+
+                // Update customer database if photo was changed
+                if (photoData) {
+                    const customerData = {
+                        name: name,
+                        phone: phone,
+                        photo: photoData
+                    };
+                    addOrUpdateCustomer(customerData, rideToReschedule);
+                }
+
+                closeRescheduleModal(); // Close the reschedule modal
+                showNotification(`📅 Ride for ${name} has been rescheduled!`);
+                updateStats(); // Update home screen statistics
+                
+                // Refresh all ride screens since the ride may have moved between days
+                displayTodaysRides();
+                displayTomorrowsRides();
+                displayFutureRides();
+            }
         }
 
         // Show completed rides details modal
         function showCompletedRides() {
             console.log('Showing completed rides details');
-            const today = getLocalDateString();
-            const completedRides = ridesData.filter(ride => ride.date === today && ride.status === 'completed');
+            const todayNormalized = getNormalizedDateString(new Date());
+            const completedRides = ridesData.filter(ride => ride.date === todayNormalized && ride.status === 'completed');
             
             if (completedRides.length === 0) {
                 showNotification('ℹ️ No completed rides for today yet!');
@@ -1686,9 +2340,9 @@
 
             // Sort completed rides by dropoff time
             completedRides.sort((a, b) => {
-                const timeA = new Date(`1970/01/01 ${a.dropoffTime}`).getTime();
-                const timeB = new Date(`1970/01/01 ${b.dropoffTime}`).getTime();
-                return timeA - timeB;
+                const timeA = new Date(`1970/01/01 ${a.dropoffTime}`);
+                const timeB = new Date(`1970/01/01 ${b.dropoffTime}`);
+                return timeA.getTime() - timeB.getTime();
             });
 
             let totalEarnings = 0;
@@ -1697,6 +2351,19 @@
             completedRides.forEach((ride, index) => {
                 const fareValue = parseFloat(ride.fare.replace('$', '')) || 0;
                 totalEarnings += fareValue;
+
+                // Format the ride date for display within the modal
+                const displayRideDate = new Date(ride.date + 'T00:00:00').toLocaleDateString();
+
+                // Driver notes display
+                let notesDisplay = '';
+                if (ride.notes && ride.notes.trim()) {
+                    notesDisplay = `
+                        <div class="driver-notes">
+                            📝 <strong>Notes:</strong> ${ride.notes}
+                        </div>
+                    `;
+                }
                 
                 ridesHtml += `
                     <div class="customer-card completed" style="margin: 15px 0;">
@@ -1707,11 +2374,12 @@
                             </div>
                             <div class="customer-details">📞 ${ride.phone}</div>
                             <div class="route-info">
-                                📅 <strong>${formatDateForDisplay(ride.date)}</strong><br>
+                                <strong style="display: block; margin-bottom: 5px;">🗓️ ${displayRideDate}</strong>
                                 <strong>⏰ Scheduled: ${ride.scheduledTime}</strong><br>
                                 📍 <strong>From:</strong> ${ride.pickupLocation}<br>
                                 🎯 <strong>To:</strong> ${ride.dropoffLocation}
                             </div>
+                            ${notesDisplay}
                             <div class="fare-display">💰 Fare: ${ride.fare}</div>
                             <div class="time-display">🟢 <strong>Picked up:</strong> ${ride.pickupTime}</div>
                             <div class="time-display">🔵 <strong>Dropped off:</strong> ${ride.dropoffTime}</div>
@@ -1743,9 +2411,10 @@
             // Reset form fields when opening the modal for a clean start
             document.getElementById('customerName').value = '';
             document.getElementById('customerPhone').value = '';
-            document.getElementById('pickupDate').value = getLocalDateString(); // Default to today
+            document.getElementById('pickupDate').value = getNormalizedDateString(new Date()); // Default to today
             document.getElementById('pickupTime').value = '';
             document.getElementById('fareAmount').value = '';
+            document.getElementById('driverNotes').value = '';
 
             // Clear any previous highlighting
             document.querySelectorAll('.missing-field').forEach(el => {
@@ -1793,6 +2462,7 @@
             const pickupLocationInput = document.getElementById('pickupLocationInput');
             const dropoffLocationInput = document.getElementById('dropoffLocationInput');
             const fareAmountInput = document.getElementById('fareAmount');
+            const driverNotesInput = document.getElementById('driverNotes');
 
             // Get trimmed values
             const name = customerNameInput.value.trim();
@@ -1802,6 +2472,2213 @@
             const pickup = pickupLocationInput.value.trim();
             const dropoff = dropoffLocationInput.value.trim();
             const fare = fareAmountInput.value.trim();
+            const notes = driverNotesInput.value.trim();
+
+            let missingFields = false; // Flag to track if any fields are missing
+
+            // Clear previous highlighting
+            document.querySelectorAll('.missing-field').forEach(el => {
+                el.classList.remove('missing-field');
+            });
+
+            // Basic validation and highlighting
+            if (!name) {
+                customerNameInput.classList.add('missing-field');
+                missingFields = true, '')) || 0;
+            
+            if (existingIndex >= 0) {
+                // Update existing customer
+                const customer = customersDatabase[existingIndex];
+                customer.name = customerData.name; // Update name in case it changed
+                customer.totalRides += 1;
+                customer.totalSpent += fareAmount;
+                customer.lastRideDate = rideData.date;
+                
+                // Update photo if new one provided
+                if (customerData.photo) {
+                    customer.photo = customerData.photo;
+                }
+                
+                console.log(`Updated repeat customer: ${customer.name}`);
+            } else {
+                // Add new customer
+                const newCustomer = {
+                    id: Date.now(),
+                    name: customerData.name,
+                    phone: customerData.phone,
+                    photo: customerData.photo || null,
+                    totalRides: 1,
+                    totalSpent: fareAmount,
+                    firstRideDate: rideData.date,
+                    lastRideDate: rideData.date,
+                    addedAt: new Date().toISOString()
+                };
+                
+                customersDatabase.push(newCustomer);
+                console.log(`Added new customer: ${newCustomer.name}`);
+            }
+            
+            saveCustomersDatabase();
+        }
+
+        // Display customers database
+        function displayCustomers() {
+            console.log('Rendering customers database.');
+            const container = document.getElementById('customersList');
+            
+            if (!container) {
+                console.error('Element "customersList" not found.');
+                return;
+            }
+
+            if (customersDatabase.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        👥 <strong>No customers in database yet</strong><br>
+                        Add rides to start building your customer database!
+                    </div>
+                `;
+                return;
+            }
+
+            // Sort customers by total rides (most loyal first)
+            const sortedCustomers = [...customersDatabase].sort((a, b) => b.totalRides - a.totalRides);
+
+            container.innerHTML = sortedCustomers.map(customer => {
+                const isLoyal = customer.totalRides >= 5;
+                const isRecent = customer.totalRides >= 2;
+                
+                let loyaltyBadge = '';
+                if (isLoyal) {
+                    loyaltyBadge = '<div style="background: linear-gradient(135deg, #f39c12, #e67e22); color: white; padding: 8px 15px; border-radius: 20px; font-size: 0.9em; font-weight: bold; margin: 10px 0;">⭐ LOYAL CUSTOMER</div>';
+                } else if (isRecent) {
+                    loyaltyBadge = '<div style="background: linear-gradient(135deg, #27ae60, #229954); color: white; padding: 8px 15px; border-radius: 20px; font-size: 0.9em; font-weight: bold; margin: 10px 0;">🔄 REPEAT CUSTOMER</div>';
+                }
+
+                let photoDisplay = '';
+                if (customer.photo) {
+                    photoDisplay = `
+                        <div style="text-align: center; margin: 15px 0;">
+                            <img src="${customer.photo}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; border: 3px solid #3498db;">
+                        </div>
+                    `;
+                } else {
+                    photoDisplay = `
+                        <div style="text-align: center; margin: 15px 0; color: #666;">
+                            📷 No photo available
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="customer-card" style="margin: 15px 0;">
+                        <div class="customer-info">
+                            <div class="customer-name">${customer.name}</div>
+                            <div class="customer-details">📞 ${customer.phone}</div>
+                            
+                            ${photoDisplay}
+                            ${loyaltyBadge}
+                            
+                            <div class="route-info">
+                                <strong>📊 Customer Statistics</strong><br>
+                                🚗 <strong>Total Rides:</strong> ${customer.totalRides}<br>
+                                💰 <strong>Total Spent:</strong> ${customer.totalSpent.toFixed(2)}<br>
+                                📅 <strong>First Ride:</strong> ${new Date(customer.firstRideDate).toLocaleDateString()}<br>
+                                🗓️ <strong>Last Ride:</strong> ${new Date(customer.lastRideDate).toLocaleDateString()}<br>
+                                💵 <strong>Average Fare:</strong> ${(customer.totalSpent / customer.totalRides).toFixed(2)}
+                            </div>
+                            
+                            <div class="communication-buttons">
+                                <a href="tel:${customer.phone}" class="comm-btn comm-btn-call">📞 Call</a>
+                                <a href="sms:${customer.phone}?body=Hi ${customer.name}, this is your KTransport360 driver!" class="comm-btn comm-btn-text">💬 Text</a>
+                                <button class="comm-btn comm-btn-delay" onclick="scheduleRideForCustomer('${customer.phone}')">📅 New Ride</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Schedule new ride for existing customer
+        function scheduleRideForCustomer(customerPhone) {
+            const customer = customersDatabase.find(c => c.phone === customerPhone);
+            if (!customer) {
+                showNotification('❌ Customer not found!');
+                return;
+            }
+
+            // Open add ride modal with pre-filled customer info
+            showAddRideModal();
+            
+            // Pre-fill customer information
+            document.getElementById('customerName').value = customer.name;
+            document.getElementById('customerPhone').value = customer.phone;
+            
+            // Show customer photo if available
+            if (customer.photo) {
+                const img = document.getElementById('previewImage');
+                const preview = document.getElementById('photoPreview');
+                if (img && preview) {
+                    img.src = customer.photo;
+                    preview.style.display = 'block';
+                }
+            }
+
+            // Show repeat customer notification
+            const isLoyal = customer.totalRides >= 5;
+            let message = `🎉 Scheduling ride for repeat customer: ${customer.name}`;
+            if (isLoyal) {
+                message += `\n⭐ LOYAL CUSTOMER (${customer.totalRides} rides) - Consider offering a discount!`;
+            }
+            showNotification(message);
+        }
+
+        /* Body and Overall Layout */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Purple-blue gradient */
+            min-height: 100vh; /* Changed for consistent height */
+            padding: 0;
+            overflow-x: hidden; /* Prevent horizontal scroll */
+            display: flex; /* Use flexbox for body to ensure mobile-container fills height */
+            flex-direction: column; /* Stack children vertically */
+        }
+
+        .mobile-container {
+            max-width: 100%;
+            margin: 0;
+            background: white;
+            min-height: 100vh; /* Changed for consistent height */
+            position: relative;
+            display: flex; /* Make it a flex container */
+            flex-direction: column; /* Arrange header, main, footer in a column */
+            flex-grow: 1; /* Allow it to grow and fill body height */
+            overflow: hidden; /* Hide overflow of the container itself, main-content will scroll */
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db); /* Dark blue to light blue gradient */
+            color: white;
+            padding: 20px 15px;
+            text-align: center;
+            position: sticky; /* Sticky header */
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            flex-shrink: 0; /* Prevent header from shrinking */
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        /* Status Bar */
+        .status-bar {
+            background: #27ae60; /* Emerald green */
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1em;
+            flex-shrink: 0; /* Prevent status bar from shrinking */
+        }
+
+        /* Main Content Area */
+        .main-content {
+            padding: 20px 15px;
+            padding-bottom: 120px; /* Space for bottom nav */
+            flex-grow: 1; /* Allows content to expand and take available space */
+            overflow-y: auto; /* Adds scrollbar when content overflows vertically */
+            -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+        }
+
+        /* Buttons */
+        .schedule-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Two columns for today/tomorrow buttons */
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .big-button {
+            width: 100%;
+            padding: 25px 15px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            min-height: 80px; /* Ensure consistent height */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .big-button:active {
+            transform: scale(0.95); /* Shrink effect on tap */
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .btn-today {
+            background: linear-gradient(135deg, #27ae60, #229954); /* Green gradient */
+            color: white;
+        }
+
+        .btn-tomorrow {
+            background: linear-gradient(135deg, #3498db, #2980b9); /* Blue gradient */
+            color: white;
+        }
+
+        .btn-add {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad); /* Purple gradient */
+            color: white;
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, #34495e, #2c3e50); /* Dark grey gradient */
+            color: white;
+        }
+
+        .btn-future { /* New style for Future Rides button */
+            background: linear-gradient(135deg, #e74c3c, #c0392b); /* Reddish gradient */
+            color: white;
+        }
+
+        .btn-analytics { /* New style for Analytics button */
+            background: linear-gradient(135deg, #f39c12, #e67e22); /* Orange gradient */
+            color: white;
+        }
+
+        /* NEW: Style for Clear Completed Rides button */
+        .btn-clear-completed {
+            background: linear-gradient(135deg, #bdc3c7, #95a5a6); /* Light grey for clear */
+            color: white;
+        }
+
+        /* Customer Ride Cards */
+        .customer-card {
+            background: white;
+            border: 3px solid #e9ecef; /* Light grey border */
+            border-radius: 15px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .customer-card.active-ride {
+            border-color: #27ae60; /* Green border for active rides */
+            background: linear-gradient(135deg, #f8fff8, #f0fff0); /* Very light green background */
+            animation: glow 3s infinite; /* Pulsing glow animation */
+        }
+
+        .customer-card.completed {
+            border-color: #95a5a6; /* Grey border for completed rides */
+            background: #f5f5f5; /* Light grey background */
+            opacity: 0.8;
+        }
+
+        @keyframes glow {
+            0%, 100% { 
+                box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3); /* Green shadow */
+                transform: translateY(0);
+            }
+            50% { 
+                box-shadow: 0 8px 25px rgba(39, 174, 96, 0.5); /* Stronger green shadow */
+                transform: translateY(-2px); /* Slight lift */
+            }
+        }
+
+        .customer-info {
+            margin-bottom: 20px;
+        }
+
+        .customer-name {
+            font-size: 1.6em;
+            font-weight: bold;
+            color: #2c3e50; /* Dark blue-grey */
+            margin-bottom: 10px;
+        }
+
+        .customer-details {
+            font-size: 1.1em;
+            line-height: 1.6;
+            color: #555;
+        }
+
+        .route-info {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef); /* Very light grey gradient */
+            padding: 15px;
+            border-radius: 12px;
+            margin: 15px 0;
+            border-left: 5px solid #3498db; /* Blue left border */
+        }
+
+        /* Driver Notes Styling */
+        .driver-notes {
+            background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+            border: 2px solid #f39c12;
+            border-radius: 10px;
+            padding: 12px;
+            margin: 10px 0;
+            font-style: italic;
+            color: #856404;
+        }
+
+        /* Communication Buttons */
+        .communication-buttons {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+
+        .comm-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px 8px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+
+        .comm-btn-call {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .comm-btn-text {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+        }
+
+        .comm-btn-delay {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .customer-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .customer-buttons button {
+            flex: 1; /* Distribute space evenly */
+            padding: 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.3em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        /* Specific button styles for pickup/dropoff, adjusted to match new layout */
+        .btn-pickup {
+            background: linear-gradient(135deg, #27ae60, #229954); /* Green gradient */
+            color: white;
+            font-size: 1.4em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-dropoff {
+            background: linear-gradient(135deg, #f39c12, #e67e22); /* Orange gradient */
+            color: white;
+            font-size: 1.4em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-cancel {
+            background: linear-gradient(135deg, #e74c3c, #c0392b); /* Red gradient */
+            color: white;
+            font-size: 1.4em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-reschedule {
+            background: linear-gradient(135deg, #9b59b6, #8e44ad); /* Purple gradient */
+            color: white;
+            font-size: 1.4em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Status Badges */
+        .status-badge {
+            display: inline-block;
+            padding: 12px 20px;
+            border-radius: 25px; /* Pill shape */
+            font-size: 1em;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 15px;
+        }
+
+        .status-scheduled {
+            background: linear-gradient(135deg, #3498db, #2980b9); /* Blue */
+            color: white;
+        }
+
+        .status-picked-up { /* Corrected class name */
+            background: linear-gradient(135deg, #27ae60, #229954); /* Green */
+            color: white;
+        }
+
+        .status-completed {
+            background: linear-gradient(135deg, #95a5a6, #7f8c8d); /* Grey */
+            color: white;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 20px;
+            border-radius: 12px;
+            margin: 15px 0;
+            font-weight: bold;
+            text-align: center;
+            font-size: 1.1em;
+        }
+
+        .alert-success {
+            background: linear-gradient(135deg, #d4edda, #c3e6cb); /* Light green */
+            color: #155724; /* Dark green text */
+            border: 2px solid #c3e6cb;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #cce7ff, #99d6ff); /* Light blue */
+            color: #004085; /* Dark blue text */
+            border: 2px solid #99d6ff;
+        }
+
+        /* Notifications (Toast-like) */
+        .notification {
+            position: fixed;
+            bottom: 100px; /* Above bottom nav */
+            left: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.1em;
+            z-index: 1000;
+            transform: translateY(200px); /* Start off-screen */
+            transition: transform 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .notification.show {
+            transform: translateY(0); /* Slide in */
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            display: flex;
+            border-top: 2px solid #e9ecef;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            z-index: 999;
+            flex-shrink: 0; /* Prevent bottom nav from shrinking */
+        }
+
+        .nav-item {
+            flex: 1;
+            padding: 20px 10px;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9em;
+            color: #666;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .nav-item.active {
+            color: #3498db; /* Blue for active icon/text */
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef); /* Light background for active */
+        }
+
+        /* Other elements */
+        .time-display {
+            background: linear-gradient(135deg, #2c3e50, #34495e);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9em;
+            margin-top: 10px;
+            border-left: 4px solid #3498db;
+        }
+
+        .screen {
+            display: none; /* Hide screens by default */
+        }
+
+        .screen.active {
+            display: block; /* Show active screen */
+        }
+
+        .fare-display {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.3em;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Modals */
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5); /* Semi-transparent overlay */
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+            align-items: center; /* Vertically center */
+            justify-content: center; /* Horizontally center */
+        }
+
+        .modal.show {
+            display: flex; /* Use flexbox to center content */
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background: white;
+            /* margin: 10% auto; Removed as flexbox handles centering */
+            padding: 30px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            position: relative;
+            animation: slideIn 0.3s ease;
+            max-height: 90vh; /* Limit height to prevent overflow on very small screens */
+            overflow-y: auto; /* Make modal content scrollable if it exceeds max-height */
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .close {
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            font-size: 2em;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s ease;
+        }
+
+        .close:hover {
+            color: #e74c3c; /* Red on hover */
+        }
+
+        /* Form Inputs */
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-size: 1.1em;
+        }
+
+        .input-group input, .input-group select, .input-group textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            font-size: 1.1em;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .input-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            background: white;
+            box-shadow: 0 0 10px rgba(52, 152, 219, 0.2);
+        }
+
+        /* NEW: Style for highlighting missing fields */
+        .input-group input.missing-field,
+        .input-group select.missing-field,
+        .input-group textarea.missing-field {
+            border-color: #e74c3c !important; /* Red border */
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.4) !important; /* Red glow */
+            background: #fffafa !important; /* Very light red background */
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* Responsive grid */
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        /* Analytics Styles */
+        .analytics-section {
+            margin-bottom: 30px;
+        }
+
+        .analytics-section h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        .metric-card.highlight {
+            border-color: #f39c12;
+            background: linear-gradient(135deg, #fff9e6, #fef5d3);
+        }
+
+        .metric-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .metric-label {
+            font-size: 0.9em;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .location-list {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .location-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .location-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Media Queries for smaller screens (e.g., keyboard open) */
+        @media (max-height: 600px) {
+            .big-button {
+                padding: 15px;
+                min-height: 60px;
+                font-size: 1em;
+            }
+            
+            .customer-buttons button {
+                padding: 15px;
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="header">
+            <h1>🚐 KTransport360 Driver</h1>
+            <p>Simple & Reliable Transport Management</p>
+        </div>
+
+        <div class="status-bar" id="statusBar">
+            📱 App Ready - All data saved on your phone
+        </div>
+
+        <div class="main-content">
+            <div id="homeScreen" class="screen active">
+                <div class="alert alert-success">
+                    📱 <strong>READY TO GO!</strong><br>
+                    Your transport app saves everything on your phone - no internet needed!
+                </div>
+
+                <div class="schedule-buttons">
+                    <button class="big-button btn-today" onclick="showTodaysRides()">
+                        📅<br>TODAY'S<br>RIDES
+                    </button>
+                    <button class="big-button btn-tomorrow" onclick="showTomorrowsRides()">
+                        📆<br>TOMORROW'S<br>RIDES
+                    </button>
+                    <button class="big-button btn-future" onclick="showFutureRides()">
+                        🔮<br>FUTURE<br>RIDES
+                    </button>
+                    <button class="big-button btn-analytics" onclick="showAnalytics()">
+                        📊<br>ANALYTICS<br>& INSIGHTS
+                    </button>
+                </div>
+
+                <button class="big-button btn-add" onclick="showAddRideModal()">
+                    ➕ Add New Ride
+                </button>
+
+                <button class="big-button btn-export" onclick="exportData()">
+                    📊 Export Data for Spreadsheet
+                </button>
+
+                <button class="big-button btn-clear-completed" onclick="clearAllCompletedRides()">
+                    🧹 Clear All Completed Rides
+                </button>
+
+                <div class="stats-grid" id="statsGrid">
+                    </div>
+            </div>
+
+            <div id="todaysScreen" class="screen">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>📅 Today's Rides</h2>
+                    <div style="font-size: 1.1em; color: #666;" id="todaysDate"></div>
+                </div>
+
+                <div id="todaysRidesList">
+                    </div>
+            </div>
+
+            <div id="tomorrowsScreen" class="screen">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>📆 Tomorrow's Rides</h2>
+                    <div style="font-size: 1.1em; color: #666;" id="tomorrowsDate"></div>
+                </div>
+
+                <div id="tomorrowsRidesList">
+                    </div>
+            </div>
+
+            <div id="futureScreen" class="screen">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                    <h2>🔮 Future Rides</h2>
+                    </div>
+
+                <div id="futureRidesList">
+                    </div>
+            </div>
+
+            <div id="analyticsScreen" class="screen">
+                <h2>📊 Analytics & Business Insights</h2>
+                
+                <div class="analytics-section">
+                    <h3>📈 Financial Overview</h3>
+                    <div class="analytics-grid" id="financialMetrics">
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>🕒 Time & Productivity</h3>
+                    <div class="analytics-grid" id="timeMetrics">
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>📍 Location Insights</h3>
+                    <div class="analytics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Most Popular Pickup Locations</div>
+                            <div class="location-list" id="topPickupLocations">
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Most Popular Drop-off Locations</div>
+                            <div class="location-list" id="topDropoffLocations">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="analytics-section">
+                    <h3>📅 Weekly Trends</h3>
+                    <div class="analytics-grid" id="weeklyTrends">
+                    </div>
+                </div>
+            <div id="customersScreen" class="screen">
+                <h2>👥 Customer Database</h2>
+                
+                <div class="alert alert-info" style="margin-bottom: 20px;">
+                    📊 <strong>Customer Management</strong><br>
+                    View all customers, their photos, and ride history
+                </div>
+
+                <div id="customersList">
+                </div>
+            </div>
+        </div>
+
+        <div id="completedRidesModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeCompletedRidesModal()">&times;</span>
+                <h2>✅ Today's Completed Rides</h2>
+                <div id="completedRidesDetails">
+                    </div>
+            </div>
+        </div>
+
+        <div id="cancelConfirmModal" class="modal">
+            <div class="modal-content">
+                <h2>❌ Cancel Ride</h2>
+                <p id="cancelRideDetails" style="font-size: 1.1em; margin: 20px 0; text-align: center;"></p>
+                <p style="color: #e74c3c; font-weight: bold; text-align: center;">This will permanently remove the ride from your schedule.</p>
+                
+                <div style="display: flex; gap: 15px; margin-top: 30px;">
+                    <button class="big-button" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d); flex: 1;" onclick="closeCancelModal()">
+                        Keep Scheduled
+                    </button>
+                    <button class="big-button btn-cancel" style="flex: 1;" onclick="confirmCancelRide()">
+                        ❌ Remove Ride
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="rescheduleRideModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeRescheduleModal()">&times;</span>
+                <h2>📅 Reschedule Ride</h2>
+                
+                <div class="input-group">
+                    <label for="rescheduleCustomerName">Customer Name</label>
+                    <input type="text" id="rescheduleCustomerName" placeholder="Enter customer name">
+                </div>
+
+                <div class="input-group">
+                    <label for="rescheduleCustomerPhone">Phone Number</label>
+                    <input type="tel" inputmode="tel" id="rescheduleCustomerPhone" placeholder="(904) 555-0123">
+                </div>
+
+                <div class="input-group">
+                    <label for="rescheduleCustomerPhoto">Customer Photo (Optional)</label>
+                    <input type="file" id="rescheduleCustomerPhoto" accept="image/*" capture="user">
+                    <div id="reschedulePhotoPreview" style="margin-top: 10px; display: none;">
+                        <img id="reschedulePreviewImage" style="max-width: 150px; max-height: 150px; border-radius: 10px; border: 2px solid #ddd;">
+                        <button type="button" onclick="clearReschedulePhoto()" style="display: block; margin-top: 5px; padding: 5px 10px; background: #e74c3c; color: white; border: none; border-radius: 5px; font-size: 0.9em;">Remove Photo</button>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="reschedulePickupDate">Pickup Date</label>
+                    <input type="date" id="reschedulePickupDate">
+                </div>
+
+                <div class="input-group">
+                    <label for="reschedulePickupTime">Pickup Time</label>
+                    <input type="time" id="reschedulePickupTime">
+                </div>
+
+                <div class="input-group">
+                    <label for="reschedulePickupLocationInput">Pickup Location</label>
+                    <input type="text" id="reschedulePickupLocationInput" list="commonLocationsDatalist" placeholder="Select or type a pickup location">
+                </div>
+
+                <div class="input-group">
+                    <label for="rescheduleDropoffLocationInput">Drop-off Location</label>
+                    <input type="text" id="rescheduleDropoffLocationInput" list="commonLocationsDatalist" placeholder="Select or type a drop-off location">
+                </div>
+
+                <div class="input-group">
+                    <label for="rescheduleFareAmount">Fare Amount</label>
+                    <input type="text" id="rescheduleFareAmount" placeholder="$45.00">
+                </div>
+
+                <div class="input-group">
+                    <label for="rescheduleDriverNotes">Driver Notes (Optional)</label>
+                    <textarea id="rescheduleDriverNotes" placeholder="Special instructions, customer preferences, payment method, etc."></textarea>
+                </div>
+
+                <button class="big-button btn-reschedule" onclick="saveRescheduledRide()">
+                    📅 Update Ride
+                </button>
+            </div>
+        </div>
+
+        <div id="addRideModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal()">&times;</span>
+                <h2>➕ Add New Ride</h2>
+                
+                <div class="input-group">
+                    <label for="customerName">Customer Name</label>
+                    <input type="text" id="customerName" placeholder="Enter customer name">
+                </div>
+
+                <div class="input-group">
+                    <label for="customerPhone">Phone Number</label>
+                    <input type="tel" inputmode="tel" id="customerPhone" placeholder="(904) 555-0123">
+                </div>
+
+                <div class="input-group">
+                    <label for="customerPhoto">Customer Photo (Optional)</label>
+                    <input type="file" id="customerPhoto" accept="image/*" capture="user">
+                    <div id="photoPreview" style="margin-top: 10px; display: none;">
+                        <img id="previewImage" style="max-width: 150px; max-height: 150px; border-radius: 10px; border: 2px solid #ddd;">
+                        <button type="button" onclick="clearPhoto()" style="display: block; margin-top: 5px; padding: 5px 10px; background: #e74c3c; color: white; border: none; border-radius: 5px; font-size: 0.9em;">Remove Photo</button>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label for="pickupDate">Pickup Date</label>
+                    <input type="date" id="pickupDate">
+                </div>
+
+                <div class="input-group">
+                    <label for="pickupTime">Pickup Time</label>
+                    <input type="time" id="pickupTime">
+                </div>
+
+                <div class="input-group">
+                    <label for="pickupLocationInput">Pickup Location</label>
+                    <input type="text" id="pickupLocationInput" list="commonLocationsDatalist" placeholder="Select or type a pickup location">
+                </div>
+
+                <div class="input-group">
+                    <label for="dropoffLocationInput">Drop-off Location</label>
+                    <input type="text" id="dropoffLocationInput" list="commonLocationsDatalist" placeholder="Select or type a drop-off location">
+                </div>
+
+                <div class="input-group">
+                    <label for="fareAmount">Fare Amount</label>
+                    <input type="text" id="fareAmount" placeholder="$45.00">
+                </div>
+
+                <div class="input-group">
+                    <label for="driverNotes">Driver Notes (Optional)</label>
+                    <textarea id="driverNotes" placeholder="Special instructions, customer preferences, payment method, etc."></textarea>
+                </div>
+
+                <button class="big-button btn-add" onclick="saveNewRide()">
+                    💾 Save Ride
+                </button>
+            </div>
+        </div>
+
+        <div id="delayNoticeModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeDelayModal()">&times;</span>
+                <h2>⏰ Send Delay Notice</h2>
+                <p style="margin-bottom: 20px;">Choose a delay reason to send to the customer:</p>
+                
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <button class="comm-btn comm-btn-delay" onclick="sendDelayNotice('traffic')">
+                        🚗 Traffic Delay (10-15 min)
+                    </button>
+                    <button class="comm-btn comm-btn-delay" onclick="sendDelayNotice('previous')">
+                        📅 Previous Ride Running Late
+                    </button>
+                    <button class="comm-btn comm-btn-delay" onclick="sendDelayNotice('weather')">
+                        🌧️ Weather Conditions
+                    </button>
+                    <button class="comm-btn comm-btn-delay" onclick="sendDelayNotice('vehicle')">
+                        🔧 Vehicle Issue (Minor)
+                    </button>
+                    <button class="comm-btn comm-btn-delay" onclick="sendDelayNotice('custom')">
+                        ✏️ Custom Message
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="notification" class="notification">
+            📱 Ride saved!
+        </div>
+
+        <datalist id="commonLocationsDatalist"></datalist>
+
+        <div class="bottom-nav">
+            <button class="nav-item active" onclick="showHome()">
+                🏠<br>Home
+            </button>
+            <button class="nav-item" onclick="showTodaysRides()">
+                📅<br>Today
+            </button>
+            <button class="nav-item" onclick="showTomorrowsRides()">
+                📆<br>Tomorrow
+            </button>
+            <button class="nav-item" onclick="showFutureRides()">
+                🔮<br>Future
+            </button>
+            <button class="nav-item" onclick="showAnalytics()">
+                📊<br>Analytics
+            </button>
+            <button class="nav-item" onclick="showCustomers()">
+                👥<br>Customers
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // *** IMPORTANT: If you see ReferenceErrors, ensure this script runs! ***
+        // This log helps confirm the script is starting to execute.
+        console.log('KTransport360 Script: Beginning execution...');
+
+        // App Data Storage
+        let ridesData = [];
+        let commonLocations = [];
+        let customersDatabase = [];
+        let rideToCancel = null; // Store the ride being cancelled
+        let rideToReschedule = null; // Store the ride being rescheduled
+        let currentDelayRide = null; // Store the ride for delay notice
+
+        // Key for storing data in localStorage
+        const COMMON_LOCATIONS_STORAGE_KEY = 'ktransport360_common_locations';
+        const CUSTOMERS_DATABASE_KEY = 'ktransport360_customers';
+
+        // Helper to get a date string (YYYY-MM-DD) for a given date, normalized to midnight
+        function getNormalizedDateString(date) {
+            const d = new Date(date);
+            d.setHours(0, 0, 0, 0); // Set to midnight
+            return d.toISOString().split('T')[0];
+        }
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('App starting...');
+            
+            // Load data from localStorage (rides and common locations)
+            loadData(); // Load rides data (pending uploads are no longer loaded)
+            loadCommonLocationsData(); // Load/initialize common locations from localStorage/defaults
+            loadCustomersDatabase(); // Load customer database
+            
+            // If no rides are loaded from localStorage, initialize with an empty list.
+            if (ridesData.length === 0) {
+                initializeSampleData(); // This function now ensures ridesData is empty
+            }
+
+            populateLocationSelects(); // Populate the datalist with common locations after they are loaded
+
+            // Set up dates for display and default form value
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            document.getElementById('todaysDate').textContent = getNormalizedDateString(today); // Use helper
+            document.getElementById('tomorrowsDate').textContent = getNormalizedDateString(tomorrow); // Use helper
+            document.getElementById('pickupDate').value = getNormalizedDateString(today); // Default new ride date to today
+            
+            // Initialize display
+            updateStats();
+            showHome(); // This will activate the home screen and initial stats display
+            
+            console.log('App initialized successfully');
+            updateStatusBar(); // Initial status bar update with current time
+
+            // Add event listeners for fare amount formatting - both add and reschedule modals
+            setupFareFormatting('fareAmount');
+            setupFareFormatting('rescheduleFareAmount');
+
+            // Add event listeners for phone formatting - both add and reschedule modals
+            setupPhoneFormatting('customerPhone');
+            setupPhoneFormatting('rescheduleCustomerPhone');
+
+            // Add event listeners for photo uploads
+            setupPhotoHandling('customerPhoto', 'photoPreview', 'previewImage');
+            setupPhotoHandling('rescheduleCustomerPhoto', 'reschedulePhotoPreview', 'reschedulePreviewImage');
+
+            // Add customer lookup event listeners
+            setupCustomerLookup();
+        });
+
+        // Setup fare amount formatting for a given input ID
+        function setupFareFormatting(inputId) {
+            const fareAmountInput = document.getElementById(inputId);
+            if (fareAmountInput) {
+                // Event listener for live formatting as the user types
+                fareAmountInput.addEventListener('input', function() {
+                    let value = this.value.trim();
+                    // Remove non-numeric characters, but allow one dot
+                    value = value.replace(/[^\d.]/g, '');
+
+                    // Handle decimal point correctly
+                    const parts = value.split('.');
+                    if (parts.length > 2) { // More than one decimal point
+                        value = parts[0] + '.' + parts.slice(1).join('');
+                    }
+
+                    if (value === '') {
+                        this.value = ''; // Keep empty if input is cleared
+                        return;
+                    }
+
+                    if (value.startsWith('.')) { // User types .5
+                        value = '0' + value;
+                    }
+
+                    // Prepend $ for display
+                    if (!value.startsWith('$')) { // Only add $ if not already there
+                            this.value = '$' + value;
+                    } else {
+                            this.value = value;
+                    }
+                });
+
+                // Event listener for final formatting when the input loses focus
+                fareAmountInput.addEventListener('blur', function() {
+                    console.log('FareAmount blur event triggered. Current value before final format:', this.value);
+                    let value = this.value.trim();
+                    // Remove $ and any non-numeric characters except a single decimal point
+                    value = value.replace(/[^\d.]/g, ''); 
+                    
+                    const fareNum = parseFloat(value);
+                    if (!isNaN(fareNum)) {
+                        this.value = `$${fareNum.toFixed(2)}`;
+                    } else { // If not a number, or empty after stripping
+                        this.value = '$0.00'; // Default to $0.00
+                        showNotification('Invalid fare amount entered. Set to $0.00.');
+                    }
+                });
+            } else {
+                console.warn(`Fare amount input element "${inputId}" not found.`);
+            }
+        }
+
+        // Setup phone number formatting for a given input ID
+        function setupPhoneFormatting(inputId) {
+            const customerPhoneInput = document.getElementById(inputId);
+            if (customerPhoneInput) {
+                customerPhoneInput.addEventListener('input', function() {
+                    let phoneNumber = this.value.replace(/\D/g, ''); // Remove all non-digits
+
+                    let formattedPhoneNumber = '';
+                    if (phoneNumber.length > 0) {
+                        if (phoneNumber.length === 11 && phoneNumber.startsWith('1')) {
+                            // Format for 1-(XXX) XXX-XXXX if 11 digits and starts with 1
+                            formattedPhoneNumber = `1-(${phoneNumber.substring(1, 4)}) ${phoneNumber.substring(4, 7)}-${phoneNumber.substring(7, 11)}`;
+                        } else if (phoneNumber.length >= 10) {
+                            // Format for (XXX) XXX-XXXX if 10 digits
+                            formattedPhoneNumber = `(${phoneNumber.substring(0, 3)}) ${phoneNumber.substring(3, 6)}-${phoneNumber.substring(6, 10)}`;
+                        } else if (phoneNumber.length > 6) {
+                            formattedPhoneNumber = `(${phoneNumber.substring(0, 3)}) ${phoneNumber.substring(3, 6)}-${phoneNumber.substring(6)}`;
+                        } else if (phoneNumber.length > 3) {
+                            formattedPhoneNumber = `(${phoneNumber.substring(0, 3)}) ${phoneNumber.substring(3)}`;
+                        } else {
+                            formattedPhoneNumber = phoneNumber; // Keep as-is for less than 3 digits
+                        }
+                    }
+                    this.value = formattedPhoneNumber;
+                });
+            } else {
+                console.warn(`Customer phone input element "${inputId}" not found.`);
+            }
+        }
+
+        // Function to load common locations from localStorage or use defaults
+        function loadCommonLocationsData() {
+            try {
+                const savedLocations = localStorage.getItem(COMMON_LOCATIONS_STORAGE_KEY);
+                if (savedLocations) {
+                    commonLocations = JSON.parse(savedLocations);
+                    console.log('Common locations loaded from localStorage:', commonLocations.length, 'locations.');
+                } else {
+                    // Use the hardcoded list only if nothing is in localStorage
+                    commonLocations = [
+                        "Jacksonville International Airport (JAX)",
+                        "Downtown Jacksonville",
+                        "St. Johns Town Center",
+                        "Mayo Clinic Jacksonville",
+                        "Naval Air Station Jacksonville (NAS Jax)",
+                        "Jacksonville Zoo and Gardens",
+                        "TIAA Bank Field (EverBank Stadium)",
+                        "Jacksonville Beach",
+                        "Ponte Vedra Beach",
+                        "St. Augustine Historic District",
+                        "Orlando International Airport (MCO)",
+                        "Walt Disney World Resort",
+                        "Universal Orlando Resort",
+                        "Daytona International Speedway",
+                        "Gainesville, FL",
+                        "Tallahassee, FL",
+                        "Atlanta, GA",
+                        "Savannah, GA",
+                        "Miami International Airport (MIA)",
+                        "Orlando Sanford International Airport (SFB)",
+                        "Tampa International Airport (TPA)",
+                        "Port Canaveral",
+                        "Amelia Island",
+                        "Palm Coast",
+                        "Flagler Beach",
+                        "Fernandina Beach",
+                        "Orange Park",
+                        "Fleming Island",
+                        "Middleburg",
+                        "Green Cove Springs",
+                        "Starke",
+                        "Palatka",
+                        "Lake City",
+                        "Brunswick, GA",
+                        "Valdosta, GA"
+                    ].sort();
+                    saveCommonLocationsData(); // Save defaults once
+                    console.log('Using default common locations and saving them.');
+                }
+            } catch (error) {
+                console.error('Error loading common locations from localStorage:', error);
+                // Fallback to hardcoded list if there's an error loading from storage
+                // This ensures the app can still function even if storage is corrupted
+                commonLocations = [
+                    "Jacksonville International Airport (JAX)",
+                    "Downtown Jacksonville",
+                    "St. Johns Town Center",
+                    "Mayo Clinic Jacksonville",
+                    "Naval Air Station Jacksonville (NAS Jax)",
+                    "Jacksonville Zoo and Gardens",
+                    "TIAA Bank Field (EverBank Stadium)",
+                    "Jacksonville Beach",
+                    "Ponte Vedra Beach",
+                    "St. Augustine Historic District",
+                    "Orlando International Airport (MCO)",
+                    "Walt Disney World Resort",
+                    "Universal Orlando Resort",
+                    "Daytona International Speedway",
+                    "Gainesville, FL",
+                    "Tallahassee, FL",
+                    "Atlanta, GA",
+                    "Savannah, GA",
+                    "Miami International Airport (MIA)",
+                    "Orlando Sanford International Airport (SFB)",
+                    "Tampa International Airport (TPA)",
+                    "Port Canaveral",
+                    "Amelia Island",
+                    "Palm Coast",
+                    "Flagler Beach",
+                    "Fernandina Beach",
+                    "Orange Park",
+                    "Fleming Island",
+                    "Middleburg",
+                    "Green Cove Springs",
+                    "Starke",
+                    "Palatka",
+                    "Lake City",
+                    "Brunswick, GA",
+                    "Valdosta, GA"
+                ].sort();
+            }
+        }
+
+        // Function to save common locations to localStorage
+        function saveCommonLocationsData() {
+            try {
+                localStorage.setItem(COMMON_LOCATIONS_STORAGE_KEY, JSON.stringify(commonLocations));
+                console.log('Common locations saved to localStorage.');
+            } catch (error) {
+                console.error('Error saving common locations to localStorage:', error);
+            }
+        }
+
+        // Function to load customers database from localStorage
+        function loadCustomersDatabase() {
+            try {
+                const savedCustomers = localStorage.getItem(CUSTOMERS_DATABASE_KEY);
+                if (savedCustomers) {
+                    customersDatabase = JSON.parse(savedCustomers);
+                    console.log('Customers database loaded:', customersDatabase.length, 'customers.');
+                } else {
+                    customersDatabase = [];
+                }
+            } catch (error) {
+                console.error('Error loading customers database from localStorage:', error);
+                customersDatabase = [];
+            }
+        }
+
+        // Function to save customers database to localStorage
+        function saveCustomersDatabase() {
+            try {
+                localStorage.setItem(CUSTOMERS_DATABASE_KEY, JSON.stringify(customersDatabase));
+                console.log('Customers database saved to localStorage.');
+            } catch (error) {
+                console.error('Error saving customers database to localStorage:', error);
+            }
+        }
+
+        // Load data from localStorage (this handles ridesData)
+        function loadData() {
+            try {
+                const savedRides = localStorage.getItem('ktransport360_rides');
+                if (savedRides) {
+                    ridesData = JSON.parse(savedRides);
+                    console.log('Rides data loaded:', ridesData.length, 'rides');
+                } else {
+                    ridesData = [];
+                }
+            }
+            catch (error) {
+                console.error('Error loading data from localStorage:', error);
+                ridesData = []; // Reset if error occurs to prevent further issues
+            }
+        }
+
+        // Initialize with sample data (clears current rides if none are loaded)
+        function initializeSampleData() {
+            ridesData = []; // Ensures the app starts with an empty ride list if no data is found
+            saveData(); // Save the empty state immediately
+            console.log('Sample data initialization complete: No initial rides.');
+        }
+
+        // Save rides data and common locations to localStorage
+        function saveData() {
+            try {
+                localStorage.setItem('ktransport360_rides', JSON.stringify(ridesData));
+                console.log('App data (rides) saved successfully to localStorage.'); // Updated log
+            }
+            catch (error) {
+                console.error('Error saving app data to localStorage:', error);
+            }
+        }
+
+        // Helper function to add a location to commonLocations if it's new
+        function addLocationIfNew(locationName) {
+            if (!locationName || typeof locationName !== 'string' || locationName.trim() === "") {
+                return; // Don't add empty or invalid strings
+            }
+
+            const normalizedName = locationName.trim();
+            // Check if the location already exists (case-insensitive)
+            const exists = commonLocations.some(loc => loc.toLowerCase() === normalizedName.toLowerCase());
+
+            if (!exists) {
+                commonLocations.push(normalizedName);
+                commonLocations.sort(); // Keep the list sorted alphabetically
+                saveCommonLocationsData(); // Persist the updated list
+                console.log(`Added new location: "${normalizedName}" to common locations!`);
+                populateLocationSelects(); // Re-populate datalist with new option
+            }
+        }
+
+        // --- Navigation Functions ---
+        function hideAllScreens() {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+        }
+
+        function setActiveNav(index) {
+            document.querySelectorAll('.nav-item').forEach((item, i) => {
+                if (i === index) {
+                    item.classList.add('active');
+                } else {
+                    item.classList.remove('active');
+                }
+            });
+        }
+
+        function showHome() {
+            console.log('Showing home screen.');
+            hideAllScreens();
+            document.getElementById('homeScreen').classList.add('active');
+            setActiveNav(0);
+            updateStats(); // Ensure stats are fresh when returning to home
+        }
+
+        function showTodaysRides() {
+            console.log('Showing today\'s rides screen.');
+            hideAllScreens();
+            document.getElementById('todaysScreen').classList.add('active');
+            setActiveNav(1);
+            displayTodaysRides();
+        }
+
+        function showTomorrowsRides() {
+            console.log('Showing tomorrow\'s rides screen.');
+            hideAllScreens();
+            document.getElementById('tomorrowsScreen').classList.add('active');
+            setActiveNav(2);
+            displayTomorrowsRides();
+        }
+
+        // Function to show Future Rides
+        function showFutureRides() {
+            console.log('Showing future rides screen.');
+            hideAllScreens();
+            document.getElementById('futureScreen').classList.add('active');
+            setActiveNav(3); // Assuming this is the 4th item in bottom nav (0, 1, 2, 3)
+            displayFutureRides();
+        }
+
+        // Function to show Analytics
+        function showAnalytics() {
+            console.log('Showing analytics screen.');
+            hideAllScreens();
+            document.getElementById('analyticsScreen').classList.add('active');
+            setActiveNav(4); // 5th item in bottom nav
+            displayAnalytics();
+        }
+
+        // Function to show Customers Database
+        function showCustomers() {
+            console.log('Showing customers database screen.');
+            hideAllScreens();
+            document.getElementById('customersScreen').classList.add('active');
+            setActiveNav(5); // 6th item in bottom nav
+            displayCustomers();
+        }
+
+        // Update statistics on the home screen
+        function updateStats() {
+            console.log('Updating statistics.');
+            const today = getNormalizedDateString(new Date());
+            const todaysRides = ridesData.filter(ride => ride.date === today);
+            
+            const totalRides = todaysRides.length;
+            const completed = todaysRides.filter(ride => ride.status === 'completed').length;
+            
+            let totalEarnings = 0;
+            todaysRides.forEach(ride => {
+                if (ride.status === 'completed' && ride.fare) {
+                    const fareValue = parseFloat(ride.fare.replace('$', '')) || 0;
+                    totalEarnings += fareValue;
+                }
+            });
+
+            const statsGrid = document.getElementById('statsGrid');
+            if (statsGrid) { // Check if element exists before updating
+                statsGrid.innerHTML = `
+                    <div class="stat-card">
+                        <div class="stat-number">${totalRides}</div>
+                        <div class="stat-label">Today's Rides</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #27ae60, #229954); cursor: pointer;" onclick="showCompletedRides()">
+                        <div class="stat-number">${completed}</div>
+                        <div class="stat-label">Completed (Click for Details)</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #f39c12, #e67e22);">
+                        <div class="stat-number">$${totalEarnings.toFixed(2)}</div>
+                        <div class="stat-label">Earnings</div>
+                    </div>
+                `;
+            } else {
+                console.warn('Stats grid element not found for updating stats.');
+            }
+        }
+
+        // Display today's rides in their dedicated section
+        function displayTodaysRides() {
+            console.log('Rendering today\'s rides.');
+            const todayNormalized = getNormalizedDateString(new Date());
+            
+            const todaysRides = ridesData
+                                .filter(ride => ride.date === todayNormalized)
+                                .sort((a, b) => { // Sort by scheduledTime
+                                    const timeA = new Date(`1970/01/01 ${a.scheduledTime}`).getTime();
+                                    const timeB = new Date(`1970/01/01 ${b.scheduledTime}`).getTime();
+                                    return timeA - timeB;
+                                });
+
+            const container = document.getElementById('todaysRidesList');
+            if (!container) {
+                console.error('Element "todaysRidesList" not found.');
+                return;
+            }
+
+            if (todaysRides.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        📅 <strong>No rides scheduled for today</strong><br>
+                        Use "Add New Ride" to schedule rides
+                    </div>
+                `;
+                return;
+            }
+
+            // Check for missed rides and apply highlighting
+            container.innerHTML = todaysRides.map(ride => {
+                let isMissed = false;
+                if (ride.status === 'scheduled') {
+                    const rideDateTime = new Date(`${ride.date}T${ride.scheduledTime}`);
+                    // Only mark as missed if the ride date is today AND the scheduled time is in the past
+                    // OR if the ride date is before today
+                    if (rideDateTime.getTime() < new Date().getTime()) {
+                        isMissed = true;
+                    }
+                }
+                return createRideCard(ride, isMissed); // Pass isMissed status to createRideCard
+            }).join('');
+        }
+
+
+        // Display tomorrow's rides in their dedicated section
+        function displayTomorrowsRides() {
+            console.log('Rendering tomorrow\'s rides.');
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1); // Set to tomorrow's date
+            const tomorrowNormalized = getNormalizedDateString(tomorrow);
+            
+            const tomorrowsRides = ridesData
+                                    .filter(ride => ride.date === tomorrowNormalized)
+                                    .sort((a, b) => { // Sort by scheduledTime
+                                        const timeA = new Date(`1970/01/01 ${a.scheduledTime}`).getTime();
+                                        const timeB = new Date(`1970/01/01 ${b.scheduledTime}`).getTime();
+                                        return timeA - timeB;
+                                    });
+
+            const container = document.getElementById('tomorrowsRidesList');
+            if (!container) {
+                console.error('Element "tomorrowsRidesList" not found.');
+                return;
+            }
+
+            if (tomorrowsRides.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        📆 <strong>No rides scheduled for tomorrow</strong><br>
+                        Use "Add New Ride" to schedule future rides
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = tomorrowsRides.map(ride => createRideCard(ride, false)).join(''); // No missed rides for tomorrow
+        }
+
+        // Display future rides (beyond tomorrow)
+        function displayFutureRides() {
+            console.log('Rendering future rides.');
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(today.getDate() + 1);
+            
+            const dayAfterTomorrow = new Date(tomorrow);
+            dayAfterTomorrow.setDate(tomorrow.getDate() + 1); // This correctly gets the day after tomorrow.
+            const dayAfterTomorrowNormalized = getNormalizedDateString(dayAfterTomorrow);
+
+            const futureRides = ridesData
+                                .filter(ride => ride.date >= dayAfterTomorrowNormalized)
+                                .sort((a, b) => { // Sort by date string, then by scheduledTime
+                                    if (a.date !== b.date) {
+                                        return a.date.localeCompare(b.date); // String comparison for dates
+                                    }
+                                    const timeA = new Date(`1970/01/01 ${a.scheduledTime}`).getTime();
+                                    const timeB = new Date(`1970/01/01 ${b.scheduledTime}`).getTime();
+                                    return timeA - timeB;
+                                });
+
+            const container = document.getElementById('futureRidesList');
+            if (!container) {
+                console.error('Element "futureRidesList" not found.');
+                return;
+            }
+
+            if (futureRides.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        🔮 <strong>No future rides scheduled</strong><br>
+                        Use "Add New Ride" to schedule upcoming trips!
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = futureRides.map(ride => createRideCard(ride, false)).join(''); // No missed rides for future
+        }
+
+        // Display analytics screen
+        function displayAnalytics() {
+            console.log('Rendering analytics screen.');
+            const completedRides = ridesData.filter(ride => ride.status === 'completed');
+            
+            if (completedRides.length === 0) {
+                document.getElementById('financialMetrics').innerHTML = `
+                    <div class="alert alert-info">
+                        📊 <strong>No completed rides yet</strong><br>
+                        Complete some rides to see your analytics!
+                    </div>
+                `;
+                return;
+            }
+
+            // Calculate financial metrics
+            const totalEarnings = completedRides.reduce((sum, ride) => {
+                return sum + (parseFloat(ride.fare.replace('$', '')) || 0);
+            }, 0);
+
+            const avgFare = totalEarnings / completedRides.length;
+            const highestFare = Math.max(...completedRides.map(ride => parseFloat(ride.fare.replace('$', '')) || 0));
+
+            // Calculate time metrics
+            const today = getNormalizedDateString(new Date());
+            const todaysCompletedRides = completedRides.filter(ride => ride.date === today);
+            
+            // Get ride counts by day of week
+            const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const rideDays = {};
+            completedRides.forEach(ride => {
+                const rideDate = new Date(ride.date);
+                const dayName = weekdays[rideDate.getDay()];
+                rideDays[dayName] = (rideDays[dayName] || 0) + 1;
+            });
+
+            // Find busiest day
+            let busiestDay = 'Not enough data';
+            let maxRides = 0;
+            Object.entries(rideDays).forEach(([day, count]) => {
+                if (count > maxRides) {
+                    maxRides = count;
+                    busiestDay = day;
+                }
+            });
+
+            // Calculate location statistics
+            const pickupCounts = {};
+            const dropoffCounts = {};
+            
+            completedRides.forEach(ride => {
+                const pickup = ride.pickupLocation;
+                const dropoff = ride.dropoffLocation;
+                pickupCounts[pickup] = (pickupCounts[pickup] || 0) + 1;
+                dropoffCounts[dropoff] = (dropoffCounts[dropoff] || 0) + 1;
+            });
+
+            // Sort locations by frequency
+            const topPickups = Object.entries(pickupCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+            
+            const topDropoffs = Object.entries(dropoffCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5);
+
+            // Update financial metrics
+            document.getElementById('financialMetrics').innerHTML = `
+                <div class="metric-card highlight">
+                    <div class="metric-value">$${totalEarnings.toFixed(2)}</div>
+                    <div class="metric-label">Total Earnings</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">$${avgFare.toFixed(2)}</div>
+                    <div class="metric-label">Average Fare</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">$${highestFare.toFixed(2)}</div>
+                    <div class="metric-label">Highest Fare</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">$${(todaysCompletedRides.reduce((sum, ride) => sum + (parseFloat(ride.fare.replace('$', '')) || 0), 0)).toFixed(2)}</div>
+                    <div class="metric-label">Today's Earnings</div>
+                </div>
+            `;
+
+            // Update time metrics
+            document.getElementById('timeMetrics').innerHTML = `
+                <div class="metric-card">
+                    <div class="metric-value">${completedRides.length}</div>
+                    <div class="metric-label">Total Completed Rides</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${todaysCompletedRides.length}</div>
+                    <div class="metric-label">Today's Completed</div>
+                </div>
+                <div class="metric-card highlight">
+                    <div class="metric-value">${busiestDay}</div>
+                    <div class="metric-label">Busiest Day (${maxRides} rides)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value">${(completedRides.length / Math.max(1, Object.keys(rideDays).length)).toFixed(1)}</div>
+                    <div class="metric-label">Avg Rides/Day</div>
+                </div>
+            `;
+
+            // Update pickup locations
+            document.getElementById('topPickupLocations').innerHTML = topPickups.length > 0 ? 
+                topPickups.map(([location, count]) => `
+                    <div class="location-item">
+                        <span>${location.length > 30 ? location.substring(0, 30) + '...' : location}</span>
+                        <strong>${count} rides</strong>
+                    </div>
+                `).join('') : '<div style="text-align: center; color: #666;">No data yet</div>';
+
+            // Update dropoff locations
+            document.getElementById('topDropoffLocations').innerHTML = topDropoffs.length > 0 ? 
+                topDropoffs.map(([location, count]) => `
+                    <div class="location-item">
+                        <span>${location.length > 30 ? location.substring(0, 30) + '...' : location}</span>
+                        <strong>${count} rides</strong>
+                    </div>
+                `).join('') : '<div style="text-align: center; color: #666;">No data yet</div>';
+
+            // Update weekly trends
+            document.getElementById('weeklyTrends').innerHTML = weekdays.map(day => `
+                <div class="metric-card">
+                    <div class="metric-value">${rideDays[day] || 0}</div>
+                    <div class="metric-label">${day}</div>
+                </div>
+            `).join('');
+        }
+
+        // Generates the HTML string for a single ride card
+        function createRideCard(ride, isMissed = false) {
+            const statusClass = ride.status.replace('-', ''); // Converts 'picked-up' to 'pickedup' for CSS class
+            let actionButtons = '';
+            let communicationButtons = '';
+            let missedTag = '';
+            let cardClasses = `${ride.status === 'picked-up' ? 'active-ride' : ''} ${ride.status === 'completed' ? 'completed' : ''}`;
+
+            // Add 'missed-ride' class if it's a missed ride
+            if (isMissed) {
+                cardClasses += ' missed-ride';
+                missedTag = `
+                    <div style="text-align: center; color: #e74c3c; font-weight: bold; font-size: 1.1em; padding-bottom: 10px;">
+                        🚨 ACTION REQUIRED: RIDE MISSED!
+                    </div>
+                `;
+            }
+
+            // Determine which day this ride is for
+            const rideDate = ride.date; // ride.date is already YYYY-MM-DD
+            const todayNormalized = getNormalizedDateString(new Date());
+            const tomorrow = new Date();
+            tomorrow.setDate(new Date().getDate() + 1);
+            const tomorrowNormalized = getNormalizedDateString(tomorrow);
+
+            // Format the ride date for display
+            // Using toLocaleDateString for a user-friendly format (e.g., "6/12/2025")
+            const displayRideDate = new Date(ride.date + 'T00:00:00').toLocaleDateString();
+
+            // Add communication buttons for today's and tomorrow's rides
+            if (rideDate === todayNormalized || rideDate === tomorrowNormalized) {
+                communicationButtons = `
+                    <div class="communication-buttons">
+                        <a href="tel:${ride.phone}" class="comm-btn comm-btn-call">📞 Call</a>
+                        <a href="sms:${ride.phone}?body=Hi ${ride.name}, this is your KTransport360 driver. I'm on my way to pick you up!" class="comm-btn comm-btn-text">💬 Text</a>
+                        <button class="comm-btn comm-btn-delay" onclick="showDelayModal(${ride.id})">⏰ Delay Notice</button>
+                    </div>
+                `;
+            }
+
+            // Different button logic based on the day and status
+            if (rideDate === todayNormalized) { // TODAY'S RIDES
+                if (ride.status === 'scheduled' && !isMissed) {
+                    actionButtons = `
+                        <button class="btn-pickup" onclick="pickupCustomer(${ride.id})">
+                            🟢 PICKED UP
+                        </button>
+                        <button class="btn-cancel" onclick="cancelRide(${ride.id})">
+                            ❌ CANCEL
+                        </button>
+                    `;
+                } else if (ride.status === 'picked-up') {
+                    actionButtons = `
+                        <button class="btn-dropoff" onclick="dropoffCustomer(${ride.id})">
+                            🔵 DROPPED OFF
+                        </button>
+                    `;
+                }
+            } else if (rideDate === tomorrowNormalized || rideDate > tomorrowNormalized) { // TOMORROW'S RIDES OR FUTURE RIDES
+                if (ride.status === 'scheduled') {
+                    actionButtons = `
+                        <button class="btn-reschedule" onclick="rescheduleRide(${ride.id})">
+                            📅 RESCHEDULE
+                        </button>
+                        <button class="btn-cancel" onclick="cancelRide(${ride.id})">
+                            ❌ CANCEL
+                        </button>
+                    `;
+                }
+            }
+
+            // If no buttons were set (completed rides, or future/tomorrow rides that aren't 'scheduled'), show status info
+            if (!actionButtons) {
+                // Parse date manually to avoid timezone issues
+                const dateParts = ride.date.split('-'); // "YYYY-MM-DD" -> ["YYYY", "MM", "DD"]
+                const displayDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2])).toLocaleDateString();
+                actionButtons = `
+                    <div style="text-align: center; color: #3498db; font-weight: bold; font-size: 1.2em; padding: 20px;">
+                        📅 SCHEDULED FOR ${displayDate}
+                    </div>
+                `;
+            }
+
+            // Driver notes display
+            let notesDisplay = '';
+            if (ride.notes && ride.notes.trim()) {
+                notesDisplay = `
+                    <div class="driver-notes">
+                        📝 <strong>Driver Notes:</strong> ${ride.notes}
+                    </div>
+                `;
+            }
+
+            return `
+                <div class="customer-card ${cardClasses}">
+                    ${missedTag}
+                    <div class="customer-info">
+                        <div class="customer-name">${ride.name}</div>
+                        <div class="customer-details">📞 ${ride.phone}</div>
+                        <div class="route-info">
+                            <strong style="display: block; margin-bottom: 5px;">🗓️ ${displayRideDate}</strong>
+                            <strong>⏰ ${ride.scheduledTime}</strong><br>
+                            📍 <strong>From:</strong> ${ride.pickupLocation}<br>
+                            🎯 <strong>To:</strong> ${ride.dropoffLocation}
+                        </div>
+                        ${notesDisplay}
+                        ${ride.fare ? `<div class="fare-display">💰 Fare: ${ride.fare}</div>` : ''}
+                        <span class="status-badge status-${statusClass}">${ride.status.replace('-', ' ').toUpperCase()}</span>
+                        ${ride.pickupTime ? `<div class="time-display">🟢 <strong>Picked up:</strong> ${ride.pickupTime}</div>` : ''}
+                        ${ride.dropoffTime ? `<div class="time-display">🔵 <strong>Dropped off:</strong> ${ride.dropoffTime}</div>` : ''}
+                    </div>
+                    
+                    ${communicationButtons}
+                    
+                    <div class="customer-buttons">
+                        ${actionButtons}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Show delay notice modal
+        function showDelayModal(rideId) {
+            const ride = ridesData.find(r => r.id === rideId);
+            if (!ride) {
+                showNotification('❌ Error: Ride not found!');
+                return;
+            }
+            currentDelayRide = ride;
+            document.getElementById('delayNoticeModal').classList.add('show');
+        }
+
+        // Close delay modal
+        function closeDelayModal() {
+            document.getElementById('delayNoticeModal').classList.remove('show');
+            currentDelayRide = null;
+        }
+
+        // Send delay notice
+        function sendDelayNotice(delayType) {
+            if (!currentDelayRide) {
+                showNotification('❌ Error: No ride selected for delay notice!');
+                return;
+            }
+
+            let message = '';
+            const customerName = currentDelayRide.name;
+
+            switch(delayType) {
+                case 'traffic':
+                    message = `Hi ${customerName}, this is your KTransport360 driver. I'm running 10-15 minutes late due to heavy traffic. Thank you for your patience!`;
+                    break;
+                case 'previous':
+                    message = `Hi ${customerName}, this is your KTransport360 driver. My previous ride is running a bit late, so I'll be about 10 minutes behind schedule. Sorry for the delay!`;
+                    break;
+                case 'weather':
+                    message = `Hi ${customerName}, this is your KTransport360 driver. Due to weather conditions, I'm running slightly behind schedule. I'll be there soon!`;
+                    break;
+                case 'vehicle':
+                    message = `Hi ${customerName}, this is your KTransport360 driver. I had a minor vehicle issue that's now resolved, but I'm running about 15 minutes late. Thank you for understanding!`;
+                    break;
+                case 'custom':
+                    message = prompt('Enter your custom delay message:');
+                    if (!message) {
+                        closeDelayModal();
+                        return;
+                    }
+                    break;
+            }
+
+            // Open SMS with pre-filled message
+            const smsUrl = `sms:${currentDelayRide.phone}?body=${encodeURIComponent(message)}`;
+            window.open(smsUrl);
+
+            closeDelayModal();
+            showNotification(`📱 Delay notice sent to ${customerName}!`);
+        }
+
+        // Handle customer pickup action
+        function pickupCustomer(rideId) {
+            console.log('Attempting pickup for ride ID:', rideId);
+            const ride = ridesData.find(r => r.id === rideId);
+            if (!ride) {
+                console.error('Ride not found for pickup:', rideId);
+                showNotification('❌ Error: Ride not found for pickup!'); // Use custom notification
+                return;
+            }
+
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // Format time clearly
+            
+            ride.pickupTime = timeString;
+            ride.status = 'picked-up';
+            
+            saveData(); // Save changes to localStorage
+            
+            // Re-render the current active screen to reflect the status change
+            if (document.getElementById('todaysScreen').classList.contains('active')) {
+                displayTodaysRides();
+            } else if (document.getElementById('tomorrowsScreen').classList.contains('active')) {
+                displayTomorrowsRides();
+            } else if (document.getElementById('futureScreen').classList.contains('active')) { // Re-render future rides if active
+                displayFutureRides();
+            }
+            
+            showNotification(`🟢 ${ride.name} picked up at ${timeString}`);
+            updateStats(); // Update earnings/completed rides
+        }
+
+        // Handle customer drop-off action
+        async function dropoffCustomer(rideId) { 
+            console.log('Attempting drop-off for ride ID:', rideId);
+            const ride = ridesData.find(r => r.id === rideId);
+            if (!ride) {
+                console.error('Ride not found for drop-off:', rideId);
+                showNotification('❌ Error: Ride not found for drop-off!'); // Use custom notification
+                return;
+            }
+
+            const now = new Date();
+            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // Format time clearly
+            
+            ride.dropoffTime = timeString;
+            ride.status = 'completed';
+            
+            saveData(); // Save changes to localStorage
+            
+            // Re-render the current active screen to reflect the status change
+            if (document.getElementById('todaysScreen').classList.contains('active')) {
+                displayTodaysRides();
+            } else if (document.getElementById('tomorrowsScreen').classList.contains('active')) {
+                displayTomorrowsRides();
+            } else if (document.getElementById('futureScreen').classList.contains('active')) { // Re-render future rides if active
+                displayFutureRides();
+            }
+            
+            showNotification(`🔵 ${ride.name} dropped off at ${timeString} - Trip completed!`);
+            updateStats(); // Update earnings/completed rides
+        }
+
+        // Handle ride cancellation action
+        function cancelRide(rideId) {
+            console.log('Attempting to cancel ride ID:', rideId);
+            const ride = ridesData.find(r => r.id === rideId);
+            if (!ride) {
+                console.error('Ride not found for cancellation:', rideId);
+                showNotification('❌ Error: Ride not found for cancellation!');
+                return;
+            }
+
+            // Store the ride to cancel and show custom confirmation modal
+            rideToCancel = ride;
+            document.getElementById('cancelRideDetails').textContent = `Cancel ride for ${ride.name}?`;
+            document.getElementById('cancelConfirmModal').classList.add('show');
+        }
+
+        // Close the cancel confirmation modal
+        function closeCancelModal() {
+            document.getElementById('cancelConfirmModal').classList.remove('show');
+            rideToCancel = null;
+            showNotification('Cancellation aborted - ride remains scheduled');
+        }
+
+        // Confirm and execute the ride cancellation
+        function confirmCancelRide() {
+            if (!rideToCancel) {
+                showNotification('❌ Error: No ride selected for cancellation');
+                return;
+            }
+
+            // Remove the ride from ridesData array
+            const rideIndex = ridesData.findIndex(r => r.id === rideToCancel.id);
+            if (rideIndex > -1) {
+                const rideName = rideToCancel.name;
+                ridesData.splice(rideIndex, 1);
+                saveData(); // Save changes to localStorage
+                
+                // Close the modal
+                document.getElementById('cancelConfirmModal').classList.remove('show');
+                rideToCancel = null;
+                
+                // Re-render the current active screen to reflect the change
+                if (document.getElementById('todaysScreen').classList.contains('active')) {
+                    displayTodaysRides();
+                } else if (document.getElementById('tomorrowsScreen').classList.contains('active')) {
+                    displayTomorrowsRides();
+                } else if (document.getElementById('futureScreen').classList.contains('active')) {
+                    displayFutureRides();
+                }
+                
+                showNotification(`❌ Ride for ${rideName} has been cancelled and removed from schedule`);
+                updateStats(); // Update stats since ride count changed
+            } else {
+                showNotification('❌ Error: Could not remove ride from schedule');
+                document.getElementById('cancelConfirmModal').classList.remove('show');
+                rideToCancel = null;
+            }
+        }
+
+        // Handle ride reschedule action
+        function rescheduleRide(rideId) {
+            console.log('Attempting to reschedule ride ID:', rideId);
+            const ride = ridesData.find(r => r.id === rideId);
+            if (!ride) {
+                console.error('Ride not found for rescheduling:', rideId);
+                showNotification('❌ Error: Ride not found for rescheduling!');
+                return;
+            }
+
+            // Store the ride to reschedule and populate the form
+            rideToReschedule = ride;
+            
+            // Pre-fill the reschedule form with current ride data
+            document.getElementById('rescheduleCustomerName').value = ride.name;
+            document.getElementById('rescheduleCustomerPhone').value = ride.phone;
+            document.getElementById('reschedulePickupDate').value = ride.date;
+            
+            // Convert scheduled time back to 24-hour format for the time input
+            const time24 = convertTo24Hour(ride.scheduledTime);
+            document.getElementById('reschedulePickupTime').value = time24;
+            
+            document.getElementById('reschedulePickupLocationInput').value = ride.pickupLocation;
+            document.getElementById('rescheduleDropoffLocationInput').value = ride.dropoffLocation;
+            document.getElementById('rescheduleFareAmount').value = ride.fare;
+            document.getElementById('rescheduleDriverNotes').value = ride.notes || '';
+
+            // Clear any previous highlighting
+            document.querySelectorAll('.missing-field').forEach(el => {
+                el.classList.remove('missing-field');
+            });
+
+            // Show the reschedule modal
+            document.getElementById('rescheduleRideModal').classList.add('show');
+        }
+
+        // Helper function to convert 12-hour time to 24-hour format (e.g., "2:30 PM" -> "14:30")
+        function convertTo24Hour(time12) {
+            if (!time12) return '';
+            
+            const [time, modifier] = time12.split(' ');
+            let [hours, minutes] = time.split(':');
+            
+            if (hours === '12') {
+                hours = '00';
+            }
+            
+            if (modifier === 'PM') {
+                hours = parseInt(hours, 10) + 12;
+            }
+            
+            return `${hours.toString().padStart(2, '0')}:${minutes}`;
+        }
+
+        // Close the reschedule modal
+        function closeRescheduleModal() {
+            document.getElementById('rescheduleRideModal').classList.remove('show');
+            rideToReschedule = null;
+            showNotification('Reschedule cancelled - ride remains as originally scheduled');
+        }
+
+        // Save the rescheduled ride
+        function saveRescheduledRide() {
+            console.log('Attempting to save rescheduled ride.');
+            
+            if (!rideToReschedule) {
+                showNotification('❌ Error: No ride selected for rescheduling');
+                return;
+            }
+
+            // Get references to reschedule input elements
+            const customerNameInput = document.getElementById('rescheduleCustomerName');
+            const customerPhoneInput = document.getElementById('rescheduleCustomerPhone');
+            const pickupDateInput = document.getElementById('reschedulePickupDate');
+            const pickupTimeInput = document.getElementById('reschedulePickupTime');
+            const pickupLocationInput = document.getElementById('reschedulePickupLocationInput');
+            const dropoffLocationInput = document.getElementById('rescheduleDropoffLocationInput');
+            const fareAmountInput = document.getElementById('rescheduleFareAmount');
+            const driverNotesInput = document.getElementById('rescheduleDriverNotes');
+
+            // Get trimmed values
+            const name = customerNameInput.value.trim();
+            const phone = customerPhoneInput.value.trim();
+            const date = pickupDateInput.value;
+            const time = pickupTimeInput.value;
+            const pickup = pickupLocationInput.value.trim();
+            const dropoff = dropoffLocationInput.value.trim();
+            const fare = fareAmountInput.value.trim();
+            const notes = driverNotesInput.value.trim();
 
             let missingFields = false; // Flag to track if any fields are missing
 
@@ -1849,270 +4726,201 @@
                 addLocationIfNew(dropoff);
             }
 
-            // Format fare to ensure it has a $ sign and is a valid number (e.g., "$45.00")
-            let formattedFare = '';
-            const fareNum = parseFloat(fare.replace(/[^0-9.]/g, '')); // Remove non-numeric except dot
-            if (!isNaN(fareNum)) {
-                formattedFare = `$${fareNum.toFixed(2)}`;
+            // Get photo data if uploaded
+            let photoData = null;
+            const photoInput = document.getElementById('rescheduleCustomerPhoto');
+            if (photoInput.files && photoInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    photoData = e.target.result;
+                    proceedWithReschedule();
+                };
+                reader.readAsDataURL(photoInput.files[0]);
+                return; // Wait for photo to load
             } else {
-                formattedFare = '$0.00'; // Default to $0.00 if fare is invalid/empty
+                proceedWithReschedule();
             }
-            
-            const newRide = {
-                id: Date.now(), // Unique ID using current timestamp
-                name: name,
-                phone: phone,
-                pickupLocation: pickup,
-                dropoffLocation: dropoff,
-                date: date,
-                scheduledTime: formatTime(time),
-                pickupTime: '',
-                dropoffTime: '',
-                fare: formattedFare,
-                status: 'scheduled', // New rides start as 'scheduled'
-                addedAt: new Date().toISOString()
-            };
 
-            ridesData.push(newRide); // Add new ride to the data array
+            function proceedWithReschedule() {
+            
+            // Update the existing ride with new information
+            rideToReschedule.name = name;
+            rideToReschedule.phone = phone;
+            rideToReschedule.pickupLocation = pickup;
+            rideToReschedule.dropoffLocation = dropoff;
+            rideToReschedule.date = date;
+            rideToReschedule.scheduledTime = formatTime(time);
+            rideToReschedule.fare = formattedFare;
+            rideToReschedule.notes = notes;
+            // Keep the same ID and other properties
+            
             saveData(); // Persist the updated data
 
-            closeModal(); // Close the form modal
-            showNotification(`✅ Ride scheduled for ${name}!`);
+            closeRescheduleModal(); // Close the reschedule modal
+            showNotification(`📅 Ride for ${name} has been rescheduled!`);
             updateStats(); // Update home screen statistics
             
-            // Immediately refresh the relevant ride list if the new ride applies to it
-            const today = getLocalDateString();
-            const tomorrowDate = getTomorrowDateString();
-
-            if (date === today && document.getElementById('todaysScreen').classList.contains('active')) {
-                displayTodaysRides();
-            } else if (date === tomorrowDate && document.getElementById('tomorrowsScreen').classList.contains('active')) {
-                displayTomorrowsRides();
-            } else if (date > tomorrowDate && document.getElementById('futureScreen').classList.contains('active')) {
-                displayFutureRides(); // Refresh future rides if adding a future ride while on that screen
-            }
+            // Refresh all ride screens since the ride may have moved between days
+            displayTodaysRides();
+            displayTomorrowsRides();
+            displayFutureRides();
         }
 
-        // Helper: Converts 24-hour time string to 12-hour format (e.g., "14:30" -> "2:30 PM")
-        function formatTime(time24) {
-            if (!time24) return '';
-            const [hours, minutes] = time24.split(':');
-            const hour = parseInt(hours);
-            const ampm = hour >= 12 ? 'PM' : 'AM';
-            const hour12 = hour % 12 || 12; // Handles 0 for midnight as 12 AM
-            return `${hour12}:${minutes} ${ampm}`;
-        }
-
-        // Export data to clipboard and optionally as a file
-        function exportData() {
-            console.log('Initiating data export.');
-            // Filter only completed rides for the export report
-            const allCompletedRides = ridesData.filter(ride => ride.status === 'completed');
-
-            if (allCompletedRides.length === 0) {
-                showNotification('ℹ️ No completed rides to export yet!'); // Use custom notification
+        // Show completed rides details modal
+        function showCompletedRides() {
+            console.log('Showing completed rides details');
+            const todayNormalized = getNormalizedDateString(new Date());
+            const completedRides = ridesData.filter(ride => ride.date === todayNormalized && ride.status === 'completed');
+            
+            if (completedRides.length === 0) {
+                showNotification('ℹ️ No completed rides for today yet!');
                 return;
             }
 
-            // Sort completed rides by date and then by dropoff time for better report order
-            allCompletedRides.sort((a, b) => {
-                const dateTimeA = new Date(`${a.date} ${a.dropoffTime}`);
-                const dateTimeB = new Date(`${b.date} ${b.dropoffTime}`);
-                return dateTimeA.getTime() - dateTimeB.getTime(); // Compare timestamps
-            });
-
-
-            // Construct the export text in a simple table-like format
-            let exportText = "KTRANSPORT360 DAILY EXPORT\n";
-            exportText += `Report Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}\n\n`;
-            exportText += "Customer Name | Phone | Pickup Location | Dropoff Location | Scheduled Time | Pickup Time | Dropoff Time | Fare | Ride Date\n";
-            exportText += "=".repeat(150) + "\n"; // A long separator line
-
-            allCompletedRides.forEach(ride => {
-                // Ensure all fields are strings to avoid issues with join
-                const row = [
-                    ride.name,
-                    ride.phone,
-                    ride.pickupLocation,
-                    ride.dropoffLocation,
-                    ride.scheduledTime,
-                    ride.pickupTime,
-                    ride.dropoffTime,
-                    ride.fare,
-                    new Date(ride.date).toLocaleDateString() // Format date for readability
-                ].join(' | ');
-                exportText += row + '\n';
+            // Sort completed rides by dropoff time
+            completedRides.sort((a, b) => {
+                const timeA = new Date(`1970/01/01 ${a.dropoffTime}`);
+                const timeB = new Date(`1970/01/01 ${b.dropoffTime}`);
+                return timeA.getTime() - timeB.getTime();
             });
 
             let totalEarnings = 0;
-            allCompletedRides.forEach(ride => {
-                if (ride.fare) {
-                    totalEarnings += parseFloat(ride.fare.replace('$', '')) || 0;
+            let ridesHtml = '';
+            
+            completedRides.forEach((ride, index) => {
+                const fareValue = parseFloat(ride.fare.replace('$', '')) || 0;
+                totalEarnings += fareValue;
+
+                // Format the ride date for display within the modal
+                const displayRideDate = new Date(ride.date + 'T00:00:00').toLocaleDateString();
+
+                // Driver notes display
+                let notesDisplay = '';
+                if (ride.notes && ride.notes.trim()) {
+                    notesDisplay = `
+                        <div class="driver-notes">
+                            📝 <strong>Notes:</strong> ${ride.notes}
+                        </div>
+                    `;
                 }
+                
+                ridesHtml += `
+                    <div class="customer-card completed" style="margin: 15px 0;">
+                        <div class="customer-info">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div class="customer-name">${ride.name}</div>
+                                <div style="font-size: 1.1em; color: #27ae60; font-weight: bold;">#${index + 1}</div>
+                            </div>
+                            <div class="customer-details">📞 ${ride.phone}</div>
+                            <div class="route-info">
+                                <strong style="display: block; margin-bottom: 5px;">🗓️ ${displayRideDate}</strong>
+                                <strong>⏰ Scheduled: ${ride.scheduledTime}</strong><br>
+                                📍 <strong>From:</strong> ${ride.pickupLocation}<br>
+                                🎯 <strong>To:</strong> ${ride.dropoffLocation}
+                            </div>
+                            ${notesDisplay}
+                            <div class="fare-display">💰 Fare: ${ride.fare}</div>
+                            <div class="time-display">🟢 <strong>Picked up:</strong> ${ride.pickupTime}</div>
+                            <div class="time-display">🔵 <strong>Dropped off:</strong> ${ride.dropoffTime}</div>
+                        </div>
+                    </div>
+                `;
             });
 
-            exportText += "\n" + "=".repeat(150) + "\n";
-            exportText += `SUMMARY: ${allCompletedRides.length} completed rides | Total Earnings: $${totalEarnings.toFixed(2)}`;
+            // Add summary at the top
+            const summaryHtml = `
+                <div class="alert alert-success" style="margin-bottom: 20px;">
+                    📊 <strong>TODAY'S SUMMARY</strong><br>
+                    ${completedRides.length} completed rides • Total earnings: $${totalEarnings.toFixed(2)}
+                </div>
+            `;
 
-            // Try to copy to clipboard using modern API first
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(exportText).then(() => {
-                    showNotification('📋 Data copied to clipboard! Paste into your spreadsheet or notes app.');
-                }).catch(err => {
-                    console.error('Clipboard writeText failed, attempting fallback:', err);
-                    fallbackCopyText(exportText);
+            document.getElementById('completedRidesDetails').innerHTML = summaryHtml + ridesHtml;
+            document.getElementById('completedRidesModal').classList.add('show');
+        }
+
+        // Close completed rides modal
+        function closeCompletedRidesModal() {
+            document.getElementById('completedRidesModal').classList.remove('show');
+        }
+
+        // Show the "Add New Ride" modal
+        function showAddRideModal() {
+            console.log('Opening add ride modal.');
+            // Reset form fields when opening the modal for a clean start
+            document.getElementById('customerName').value = '';
+            document.getElementById('customerPhone').value = '';
+            document.getElementById('pickupDate').value = getNormalizedDateString(new Date()); // Default to today
+            document.getElementById('pickupTime').value = '';
+            document.getElementById('fareAmount').value = '';
+            document.getElementById('driverNotes').value = '';
+
+            // Clear any previous highlighting
+            document.querySelectorAll('.missing-field').forEach(el => {
+                el.classList.remove('missing-field');
+            });
+
+            // Populate the dropdowns with common locations
+            populateLocationSelects();
+
+            document.getElementById('addRideModal').classList.add('show');
+        }
+
+        // Function to populate the location dropdowns (now a datalist)
+        function populateLocationSelects() {
+            const datalist = document.getElementById('commonLocationsDatalist');
+            // Clear previous options
+            datalist.innerHTML = ''; 
+
+            // Add common locations to the datalist
+            if (commonLocations && commonLocations.length > 0) {
+                commonLocations.forEach(location => {
+                    const option = document.createElement('option');
+                    option.value = location;
+                    datalist.appendChild(option);
                 });
             } else {
-                // Fallback for older browsers
-                fallbackCopyText(exportText);
-            }
-
-            // After a short delay, ask if the user wants to download the file
-            setTimeout(() => {
-                if (confirm('💾 Would you like to download this data as a file too?')) {
-                    downloadData(exportText, `KTransport360_Export_${new Date().toISOString().split('T')[0]}.txt`);
-                }
-            }, 2000);
-        }
-
-        // Fallback method for copying text to clipboard (for older browsers)
-        function fallbackCopyText(text) {
-            const textArea = document.createElement('textarea');
-            textArea.value = text;
-            // Make the textarea invisible and outside the viewport
-            textArea.style.position = 'fixed'; 
-            textArea.style.left = '-999999px';
-            textArea.style.top = '-999999px';
-            document.body.appendChild(textArea);
-            textArea.focus();
-            textArea.select(); // Select the text
-            
-            try {
-                document.execCommand('copy'); // Execute the copy command
-                showNotification('📋 Data copied (fallback)! Paste into your spreadsheet or notes app.');
-            } catch (err) {
-                console.error('Fallback copy failed:', err);
-                showNotification('❌ Copy failed - Please manually select and copy the data.');
-            } finally {
-                document.body.removeChild(textArea); // Clean up the textarea
+                console.warn('Common locations list is empty. Datalist will not have suggestions.');
             }
         }
 
-        // Initiates a file download
-        function downloadData(content, filename) {
-            try {
-                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = filename;
-                a.style.display = 'none'; // Hide the anchor element
-                document.body.appendChild(a);
-                a.click(); // Programmatically click to trigger download
-                document.body.removeChild(a); // Clean up
-                URL.revokeObjectURL(url); // Free up the object URL
-                showNotification('💾 File downloaded to your device!');
-            } catch (error) {
-                console.error('Error during file download:', error);
-                showNotification('❌ Download failed.');
-            }
+        // Close the modal
+        function closeModal() {
+            console.log('Closing modal.');
+            document.getElementById('addRideModal').classList.remove('show');
         }
 
-        // Displays a temporary notification message
-        function showNotification(message) {
-            const notification = document.getElementById('notification');
-            if (!notification) {
-                console.warn('Notification element not found. Cannot display notification:', message);
-                return;
-            }
-            notification.textContent = message;
-            notification.classList.add('show'); // Trigger CSS transition to show
-            
-            setTimeout(() => {
-                notification.classList.remove('show'); // Hide after 4 seconds
-            }, 4000);
-        }
+        // Save a new ride entry from the modal form
+        function saveNewRide() {
+            console.log('Attempting to save new ride.');
+            // Get references to input elements
+            const customerNameInput = document.getElementById('customerName');
+            const customerPhoneInput = document.getElementById('customerPhone');
+            const pickupDateInput = document.getElementById('pickupDate');
+            const pickupTimeInput = document.getElementById('pickupTime');
+            const pickupLocationInput = document.getElementById('pickupLocationInput');
+            const dropoffLocationInput = document.getElementById('dropoffLocationInput');
+            const fareAmountInput = document.getElementById('fareAmount');
+            const driverNotesInput = document.getElementById('driverNotes');
 
-        // Event listener to close modal when clicking outside its content
-        window.onclick = function(event) {
-            const addModal = document.getElementById('addRideModal');
-            const cancelModal = document.getElementById('cancelConfirmModal');
-            const completedModal = document.getElementById('completedRidesModal');
-            const rescheduleModal = document.getElementById('rescheduleRideModal');
-            
-            if (addModal && event.target === addModal) {
-                closeModal();
-            }
-            if (cancelModal && event.target === cancelModal) {
-                closeCancelModal();
-            }
-            if (completedModal && event.target === completedModal) {
-                closeCompletedRidesModal();
-            }
-            if (rescheduleModal && event.target === rescheduleModal) {
-                closeRescheduleModal();
-            }
-        };
+            // Get trimmed values
+            const name = customerNameInput.value.trim();
+            const phone = customerPhoneInput.value.trim();
+            const date = pickupDateInput.value;
+            const time = pickupTimeInput.value;
+            const pickup = pickupLocationInput.value.trim();
+            const dropoff = dropoffLocationInput.value.trim();
+            const fare = fareAmountInput.value.trim();
+            const notes = driverNotesInput.value.trim();
 
-        // Auto-save data to localStorage every 30 seconds
-        setInterval(() => {
-            saveData();
-            saveCommonLocationsData(); // Also auto-save common locations
-            console.log('Auto-saved data to localStorage.');
-        }, 30000);
+            let missingFields = false; // Flag to track if any fields are missing
 
-        // Update status bar with current time every minute
-        function updateStatusBar() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-            const statusBar = document.getElementById('statusBar');
-            if (statusBar) {
-                statusBar.textContent = `📱 App Ready - Last updated: ${timeString}`;
-            }
-        }
-        setInterval(updateStatusBar, 60000); // Update every minute
+            // Clear previous highlighting
+            document.querySelectorAll('.missing-field').forEach(el => {
+                el.classList.remove('missing-field');
+            });
 
-        // Global error handler for unhandled JavaScript errors
-        window.onerror = function(msg, url, lineNo, columnNo, error) {
-            console.error('Global JS Error Caught:');
-            console.error('Message:', msg);
-            console.error('URL:', url);
-            console.error('Line:', lineNo, 'Column:', columnNo);
-            console.error('Error Object:', error);
-            // Optionally, show a more prominent error message to the user
-            showNotification('Fatal Error! Check console for details. 🚨');
-            return false; // Suppress default browser error reporting
-        };
-
-        // Function to clear all completed rides from local storage
-        function clearAllCompletedRides() {
-            const initialCompletedCount = ridesData.filter(ride => ride.status === 'completed').length;
-
-            if (initialCompletedCount === 0) {
-                showNotification('ℹ️ No completed rides to clear!');
-                return;
-            }
-
-            // Ask for confirmation before clearing
-            const confirmClear = confirm('Are you sure you want to clear ALL completed rides? This action cannot be undone. \n\nWe recommend exporting your data to a spreadsheet first if you want to keep a record!');
-
-            if (confirmClear) {
-                // Filter out all completed rides
-                ridesData = ridesData.filter(ride => ride.status !== 'completed');
-                saveData(); // Save the updated ridesData (without completed rides)
-
-                showNotification(`🧹 Cleared ${initialCompletedCount} completed rides! Earnings reset.`);
-                updateStats(); // Refresh stats on home screen
-                displayTodaysRides(); // Refresh ride lists
-                displayTomorrowsRides();
-                displayFutureRides();
-            } else {
-                showNotification('Clear operation cancelled.');
-            }
-        }
-    </script>
-</body>
-</html>
-
-
-
+            // Basic validation and highlighting
+            if (!name) {
+                customerNameInput.classList.add('missing-field');
+                missingFields = true
