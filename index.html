@@ -232,6 +232,13 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
+        .btn-cancel {
+            background: linear-gradient(135deg, #e74c3c, #c0392b); /* Red gradient */
+            color: white;
+            font-size: 1.4em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
 
         /* Status Badges */
         .status-badge {
@@ -378,9 +385,12 @@
             background: rgba(0,0,0,0.5); /* Semi-transparent overlay */
             z-index: 2000;
             animation: fadeIn 0.3s ease;
-            display: flex; /* Use flexbox to center content */
             align-items: center; /* Vertically center */
             justify-content: center; /* Horizontally center */
+        }
+
+        .modal.show {
+            display: flex; /* Use flexbox to center content */
         }
 
         @keyframes fadeIn {
@@ -563,7 +573,7 @@
 
             <!-- Tomorrow's Rides Screen -->
             <div id="tomorrowsScreen" class="screen">
-                <div style="display: flex; justify-content: space-between; align-align-items: center; margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2>📆 Tomorrow's Rides</h2>
                     <div style="font-size: 1.1em; color: #666;" id="tomorrowsDate"></div>
                 </div>
@@ -582,6 +592,24 @@
 
                 <div id="futureRidesList">
                     <!-- Future rides will be populated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Cancel Confirmation Modal -->
+        <div id="cancelConfirmModal" class="modal">
+            <div class="modal-content">
+                <h2>❌ Cancel Ride</h2>
+                <p id="cancelRideDetails" style="font-size: 1.1em; margin: 20px 0; text-align: center;"></p>
+                <p style="color: #e74c3c; font-weight: bold; text-align: center;">This will permanently remove the ride from your schedule.</p>
+                
+                <div style="display: flex; gap: 15px; margin-top: 30px;">
+                    <button class="big-button" style="background: linear-gradient(135deg, #95a5a6, #7f8c8d); flex: 1;" onclick="closeCancelModal()">
+                        Keep Scheduled
+                    </button>
+                    <button class="big-button btn-cancel" style="flex: 1;" onclick="confirmCancelRide()">
+                        ❌ Remove Ride
+                    </button>
                 </div>
             </div>
         </div>
@@ -644,9 +672,6 @@
         <!-- This datalist provides autocomplete suggestions for location inputs -->
         <datalist id="commonLocationsDatalist"></datalist>
 
-        <!-- Removed hidden iframe for Google Apps Script communication -->
-        <!-- <iframe id="google-script-iframe" style="display:none;"></iframe> -->
-
         <!-- Bottom Navigation -->
         <div class="bottom-nav">
             <button class="nav-item active" onclick="showHome()">
@@ -671,13 +696,11 @@
 
         // App Data Storage
         let ridesData = [];
-        // Removed pendingUploads array as we're no longer integrating with Google Sheet directly
+        let commonLocations = [];
+        let rideToCancel = null; // Store the ride being cancelled
 
         // Key for storing common locations in localStorage
         const COMMON_LOCATIONS_STORAGE_KEY = 'ktransport360_common_locations';
-        // Removed PENDING_UPLOADS_STORAGE_KEY as we're no longer integrating with Google Sheet directly
-
-        // Removed GOOGLE_SCRIPT_URL as we're no longer integrating with Google Sheet directly
 
         // Initialize App
         document.addEventListener('DOMContentLoaded', function() {
@@ -787,8 +810,6 @@
             } else {
                 console.warn('Customer phone input element not found.');
             }
-
-            // Removed pending uploads interval as we're no longer integrating with Google Sheet directly
         });
 
         // Function to load common locations from localStorage or use defaults
@@ -904,7 +925,6 @@
                 } else {
                     ridesData = [];
                 }
-                // Removed pendingUploads loading as we're no longer integrating with Google Sheet directly
             }
             catch (error) {
                 console.error('Error loading data from localStorage:', error);
@@ -923,7 +943,6 @@
         function saveData() {
             try {
                 localStorage.setItem('ktransport360_rides', JSON.stringify(ridesData));
-                // Removed pendingUploads saving as we're no longer integrating with Google Sheet directly
                 console.log('App data (rides) saved successfully to localStorage.'); // Updated log
             }
             catch (error) {
@@ -1126,14 +1145,15 @@
             tomorrow.setDate(tomorrow.getDate() + 1); // Get tomorrow's date
             const dayAfterTomorrow = new Date(tomorrow);
             dayAfterTomorrow.setDate(tomorrow.getDate() + 1); // Get the day after tomorrow
+            
+            // Convert dayAfterTomorrow to YYYY-MM-DD string for comparison
+            const dayAfterTomorrowString = dayAfterTomorrow.toISOString().split('T')[0];
 
             const futureRides = ridesData
-                                .filter(ride => new Date(ride.date) >= dayAfterTomorrow) // Filter for rides starting from the day after tomorrow
-                                .sort((a, b) => { // Sort by date, then by scheduledTime
-                                    const dateA = new Date(a.date);
-                                    const dateB = new Date(b.date);
-                                    if (dateA.getTime() !== dateB.getTime()) {
-                                        return dateA - dateB;
+                                .filter(ride => ride.date >= dayAfterTomorrowString) // Compare strings instead of dates
+                                .sort((a, b) => { // Sort by date string, then by scheduledTime
+                                    if (a.date !== b.date) {
+                                        return a.date.localeCompare(b.date); // String comparison for dates
                                     }
                                     const timeA = new Date(`1970/01/01 ${a.scheduledTime}`).getTime();
                                     const timeB = new Date(`1970/01/01 ${b.scheduledTime}`).getTime();
@@ -1189,6 +1209,9 @@
                     <button class="btn-pickup" onclick="pickupCustomer(${ride.id})">
                         🟢 PICKED UP
                     </button>
+                    <button class="btn-cancel" onclick="cancelRide(${ride.id})">
+                        ❌ CANCEL
+                    </button>
                 `;
             } else if ((rideDate === today || rideDate === tomorrowDate) && ride.status === 'picked-up') {
                 actionButtons = `
@@ -1197,9 +1220,12 @@
                     </button>
                 `;
             } else { // For future scheduled rides, or if it's missed, no action buttons
+                // Parse date manually to avoid timezone issues
+                const dateParts = ride.date.split('-'); // "2025-06-12" -> ["2025", "06", "12"]
+                const displayDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2])).toLocaleDateString();
                 actionButtons = `
                     <div style="text-align: center; color: #3498db; font-weight: bold; font-size: 1.2em; padding: 20px;">
-                        📅 SCHEDULED FOR ${new Date(ride.date).toLocaleDateString()}
+                        📅 SCHEDULED FOR ${displayDate}
                     </div>
                 `;
             }
@@ -1277,11 +1303,6 @@
             ride.status = 'completed';
             
             saveData(); // Save changes to localStorage
-
-            // Removed Google Sheet integration code from here
-            // const sentSuccessfully = await sendRideToGoogleSheet(ride); // REMOVED
-            // if (!sentSuccessfully) { addRideToPendingUploads(ride); } // REMOVED
-            // ... etc. ... // REMOVED
             
             // Re-render the current active screen to reflect the status change
             if (document.getElementById('todaysScreen').classList.contains('active')) {
@@ -1294,6 +1315,65 @@
             
             showNotification(`🔵 ${ride.name} dropped off at ${timeString} - Trip completed!`);
             updateStats(); // Update earnings/completed rides
+        }
+
+        // Handle ride cancellation action
+        function cancelRide(rideId) {
+            console.log('Attempting to cancel ride ID:', rideId);
+            const ride = ridesData.find(r => r.id === rideId);
+            if (!ride) {
+                console.error('Ride not found for cancellation:', rideId);
+                showNotification('❌ Error: Ride not found for cancellation!');
+                return;
+            }
+
+            // Store the ride to cancel and show custom confirmation modal
+            rideToCancel = ride;
+            document.getElementById('cancelRideDetails').textContent = `Cancel ride for ${ride.name}?`;
+            document.getElementById('cancelConfirmModal').classList.add('show');
+        }
+
+        // Close the cancel confirmation modal
+        function closeCancelModal() {
+            document.getElementById('cancelConfirmModal').classList.remove('show');
+            rideToCancel = null;
+            showNotification('Cancellation aborted - ride remains scheduled');
+        }
+
+        // Confirm and execute the ride cancellation
+        function confirmCancelRide() {
+            if (!rideToCancel) {
+                showNotification('❌ Error: No ride selected for cancellation');
+                return;
+            }
+
+            // Remove the ride from ridesData array
+            const rideIndex = ridesData.findIndex(r => r.id === rideToCancel.id);
+            if (rideIndex > -1) {
+                const rideName = rideToCancel.name;
+                ridesData.splice(rideIndex, 1);
+                saveData(); // Save changes to localStorage
+                
+                // Close the modal
+                document.getElementById('cancelConfirmModal').classList.remove('show');
+                rideToCancel = null;
+                
+                // Re-render the current active screen to reflect the change
+                if (document.getElementById('todaysScreen').classList.contains('active')) {
+                    displayTodaysRides();
+                } else if (document.getElementById('tomorrowsScreen').classList.contains('active')) {
+                    displayTomorrowsRides();
+                } else if (document.getElementById('futureScreen').classList.contains('active')) {
+                    displayFutureRides();
+                }
+                
+                showNotification(`❌ Ride for ${rideName} has been cancelled and removed from schedule`);
+                updateStats(); // Update stats since ride count changed
+            } else {
+                showNotification('❌ Error: Could not remove ride from schedule');
+                document.getElementById('cancelConfirmModal').classList.remove('show');
+                rideToCancel = null;
+            }
         }
 
         // Show the "Add New Ride" modal
@@ -1314,7 +1394,7 @@
             // Populate the dropdowns with common locations
             populateLocationSelects();
 
-            document.getElementById('addRideModal').style.display = 'flex'; /* Use flex to center */
+            document.getElementById('addRideModal').classList.add('show');
         }
 
         // Function to populate the location dropdowns (now a datalist)
@@ -1338,7 +1418,7 @@
         // Close the modal
         function closeModal() {
             console.log('Closing modal.');
-            document.getElementById('addRideModal').style.display = 'none';
+            document.getElementById('addRideModal').classList.remove('show');
         }
 
         // Save a new ride entry from the modal form
@@ -1394,8 +1474,6 @@
                 dropoffLocationInput.classList.add('missing-field');
                 missingFields = true;
             }
-            // Fare is optional, but if it's there, we might want to validate its format before saving
-            // For now, we'll let the blur event handle its formatting. If it's empty, it defaults to $0.00 in newRide object.
 
             if (missingFields) {
                 showNotification('❌ Please fill in all highlighted fields!'); 
@@ -1451,7 +1529,7 @@
                 displayTodaysRides();
             } else if (date === tomorrowDate && document.getElementById('tomorrowsScreen').classList.contains('active')) {
                 displayTomorrowsRides();
-            } else if (new Date(date) > new Date(tomorrowDate) && document.getElementById('futureScreen').classList.contains('active')) {
+            } else if (date > tomorrowDate && document.getElementById('futureScreen').classList.contains('active')) {
                 displayFutureRides(); // Refresh future rides if adding a future ride while on that screen
             }
         }
@@ -1532,8 +1610,6 @@
 
             // After a short delay, ask if the user wants to download the file
             setTimeout(() => {
-                // Using a custom modal/dialog here would be better than confirm()
-                // For this example, we'll use confirm for simplicity, but note the instruction to avoid it.
                 if (confirm('💾 Would you like to download this data as a file too?')) {
                     downloadData(exportText, `KTransport360_Export_${new Date().toISOString().split('T')[0]}.txt`);
                 }
@@ -1600,9 +1676,14 @@
 
         // Event listener to close modal when clicking outside its content
         window.onclick = function(event) {
-            const modal = document.getElementById('addRideModal');
-            if (modal && event.target === modal) {
+            const addModal = document.getElementById('addRideModal');
+            const cancelModal = document.getElementById('cancelConfirmModal');
+            
+            if (addModal && event.target === addModal) {
                 closeModal();
+            }
+            if (cancelModal && event.target === cancelModal) {
+                closeCancelModal();
             }
         };
 
@@ -1635,25 +1716,6 @@
             showNotification('Fatal Error! Check console for details. 🚨');
             return false; // Suppress default browser error reporting
         };
-
-        // This function is no longer called by the app, but remains for reference
-        // if you ever re-enable Google Sheet integration.
-        async function sendRideToGoogleSheet(ride) {
-            console.log('Google Sheet integration is currently disabled in the app. This function is not being called.');
-            return false; // Always return false as it's disabled
-        }
-
-        // This function is no longer called by the app, but remains for reference
-        // if you ever re-enable Google Sheet integration.
-        function addRideToPendingUploads(ride) {
-            console.log('Google Sheet integration is currently disabled. Ride not added to pending uploads.');
-        }
-
-        // This function is no longer called by the app, but remains for reference
-        // if you ever re-enable Google Sheet integration.
-        async function processPendingUploads() {
-            console.log('Google Sheet integration is currently disabled. Not processing pending uploads.');
-        }
 
         // Function to clear all completed rides from local storage
         function clearAllCompletedRides() {
