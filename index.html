@@ -767,6 +767,28 @@
         // Key for storing common locations in localStorage
         const COMMON_LOCATIONS_STORAGE_KEY = 'ktransport360_common_locations';
 
+        // Helper function to get local date string in YYYY-MM-DD format
+        function getLocalDateString(date = new Date()) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Helper function to get tomorrow's date string
+        function getTomorrowDateString() {
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            return getLocalDateString(tomorrow);
+        }
+
+        // Helper function to get day after tomorrow's date string
+        function getDayAfterTomorrowDateString() {
+            const dayAfterTomorrow = new Date();
+            dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+            return getLocalDateString(dayAfterTomorrow);
+        }
+
         // Initialize App
         document.addEventListener('DOMContentLoaded', function() {
             console.log('App starting...');
@@ -789,7 +811,7 @@
             
             document.getElementById('todaysDate').textContent = today.toLocaleDateString();
             document.getElementById('tomorrowsDate').textContent = tomorrow.toLocaleDateString();
-            document.getElementById('pickupDate').value = today.toISOString().split('T')[0]; // Default new ride date to today
+            document.getElementById('pickupDate').value = getLocalDateString(today); // Default new ride date to today
             
             // Initialize display
             updateStats();
@@ -1100,7 +1122,7 @@
         // Update statistics on the home screen
         function updateStats() {
             console.log('Updating statistics.');
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateString();
             const todaysRides = ridesData.filter(ride => ride.date === today);
             
             const totalRides = todaysRides.length;
@@ -1138,12 +1160,9 @@
         // Display today's rides in their dedicated section
         function displayTodaysRides() {
             console.log('Rendering today\'s rides.');
-            const today = new Date();
-            const todaysDateString = today.toISOString().split('T')[0];
-            const nowTime = today.getHours() * 60 + today.getMinutes(); // Current time in minutes from midnight
-
+            const today = getLocalDateString();
             const todaysRides = ridesData
-                                .filter(ride => ride.date === todaysDateString)
+                                .filter(ride => ride.date === today)
                                 .sort((a, b) => { // Sort by scheduledTime
                                     const timeA = new Date(`1970/01/01 ${a.scheduledTime}`).getTime();
                                     const timeB = new Date(`1970/01/01 ${b.scheduledTime}`).getTime();
@@ -1185,16 +1204,21 @@
         // Display tomorrow's rides in their dedicated section
         function displayTomorrowsRides() {
             console.log('Rendering tomorrow\'s rides.');
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const tomorrowDate = tomorrow.toISOString().split('T')[0];
+            const tomorrowDate = getTomorrowDateString();
+            console.log('Tomorrow date string:', tomorrowDate); // Debug log
+            
             const tomorrowsRides = ridesData
-                                    .filter(ride => ride.date === tomorrowDate)
+                                    .filter(ride => {
+                                        console.log('Checking ride date:', ride.date, 'against tomorrow:', tomorrowDate); // Debug log
+                                        return ride.date === tomorrowDate;
+                                    })
                                     .sort((a, b) => { // Sort by scheduledTime
                                         const timeA = new Date(`1970/01/01 ${a.scheduledTime}`).getTime();
                                         const timeB = new Date(`1970/01/01 ${b.scheduledTime}`).getTime();
                                         return timeA - timeB;
                                     });
+
+            console.log('Tomorrow\'s rides found:', tomorrowsRides.length); // Debug log
 
             const container = document.getElementById('tomorrowsRidesList');
             if (!container) {
@@ -1218,17 +1242,14 @@
         // Display future rides (beyond tomorrow)
         function displayFutureRides() {
             console.log('Rendering future rides.');
-            const today = new Date();
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1); // Get tomorrow's date
-            const dayAfterTomorrow = new Date(tomorrow);
-            dayAfterTomorrow.setDate(tomorrow.getDate() + 1); // Get the day after tomorrow
-            
-            // Convert dayAfterTomorrow to YYYY-MM-DD string for comparison
-            const dayAfterTomorrowString = dayAfterTomorrow.toISOString().split('T')[0];
+            const dayAfterTomorrowString = getDayAfterTomorrowDateString();
+            console.log('Day after tomorrow string:', dayAfterTomorrowString); // Debug log
 
             const futureRides = ridesData
-                                .filter(ride => ride.date >= dayAfterTomorrowString) // Compare strings instead of dates
+                                .filter(ride => {
+                                    console.log('Checking ride date:', ride.date, 'against day after tomorrow:', dayAfterTomorrowString); // Debug log
+                                    return ride.date >= dayAfterTomorrowString; // String comparison for dates >= day after tomorrow
+                                })
                                 .sort((a, b) => { // Sort by date string, then by scheduledTime
                                     if (a.date !== b.date) {
                                         return a.date.localeCompare(b.date); // String comparison for dates
@@ -1237,6 +1258,8 @@
                                     const timeB = new Date(`1970/01/01 ${b.scheduledTime}`).getTime();
                                     return timeA - timeB;
                                 });
+
+            console.log('Future rides found:', futureRides.length); // Debug log
 
             const container = document.getElementById('futureRidesList');
             if (!container) {
@@ -1275,12 +1298,10 @@
                 `;
             }
 
-            // Determine which day this ride is for
-            const rideDate = new Date(ride.date).toISOString().split('T')[0];
-            const today = new Date().toISOString().split('T')[0];
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const tomorrowDate = tomorrow.toISOString().split('T')[0];
+            // Determine which day this ride is for using our helper functions
+            const rideDate = ride.date;
+            const today = getLocalDateString();
+            const tomorrowDate = getTomorrowDateString();
 
             // Different button logic based on the day and status
             if (rideDate === today) { // TODAY'S RIDES
@@ -1637,7 +1658,7 @@
         // Show completed rides details modal
         function showCompletedRides() {
             console.log('Showing completed rides details');
-            const today = new Date().toISOString().split('T')[0];
+            const today = getLocalDateString();
             const completedRides = ridesData.filter(ride => ride.date === today && ride.status === 'completed');
             
             if (completedRides.length === 0) {
@@ -1703,7 +1724,7 @@
             // Reset form fields when opening the modal for a clean start
             document.getElementById('customerName').value = '';
             document.getElementById('customerPhone').value = '';
-            document.getElementById('pickupDate').value = new Date().toISOString().split('T')[0]; // Default to today
+            document.getElementById('pickupDate').value = getLocalDateString(); // Default to today
             document.getElementById('pickupTime').value = '';
             document.getElementById('fareAmount').value = '';
 
@@ -1841,10 +1862,8 @@
             updateStats(); // Update home screen statistics
             
             // Immediately refresh the relevant ride list if the new ride applies to it
-            const today = new Date().toISOString().split('T')[0];
-            const tomorrow = new Date();
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const tomorrowDate = tomorrow.toISOString().split('T')[0];
+            const today = getLocalDateString();
+            const tomorrowDate = getTomorrowDateString();
 
             if (date === today && document.getElementById('todaysScreen').classList.contains('active')) {
                 displayTodaysRides();
