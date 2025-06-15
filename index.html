@@ -1724,63 +1724,129 @@ body.dark-mode .nav-item.active {
 <!-- =============================================================================== -->
 
 
-<!-- BLOCK B4: ADD RIDE MODAL -->
-<!-- Function: Complete ride creation form with customer details, scheduling, driver assignment, and photo upload -->
 <!-- =============================================================================== -->
+<!-- BLOCK B4: ADD RIDE MODAL -->
+<!-- Function: Complete ride creation form with customer details, scheduling, and photo upload -->
+<!-- =============================================================================== -->
+
 <!-- Add Ride Modal -->
 <div id="addRideModal" class="modal">
-<div class="modal-content">
-<span class="close" onclick="closeModal('addRideModal')">×</span>
-<h2>➕ Add New Ride</h2>
-<form id="addRideForm" onsubmit="addRide(event)">
-  <div class="form-group">
-    <label for="customerName">Customer Name:</label>
-    <input type="text" id="customerName" required>
-  </div>
-  <div class="form-group">
-    <label for="customerPhone">Phone Number:</label>
-    <input type="tel" id="customerPhone" required>
-  </div>
-  <div class="form-group">
-    <label for="customerEmail">Email (Optional):</label>
-    <input type="email" id="customerEmail">
-  </div>
-  <div class="form-group">
-    <label for="pickupLocation">Pickup Location:</label>
-    <input type="text" id="pickupLocation" required>
-  </div>
-  <div class="form-group">
-    <label for="dropoffLocation">Drop-off Location:</label>
-    <input type="text" id="dropoffLocation" required>
-  </div>
-  <div class="form-group">
-    <label for="assignedDriver">Assign Driver/Vehicle:</label>
-    <input type="text" id="assignedDriver" list="driverList" placeholder="Enter driver or vehicle name" required>
-    <datalist id="driverList">
-      <!-- Previous drivers will be populated here -->
-    </datalist>
-  </div>
-  <div class="form-group">
-    <label for="driverRating">Driver Rating:</label>
-    <select id="driverRating" required>
-      <option value="">Select Rating</option>
-      <option value="5">⭐⭐⭐⭐⭐</option>
-      <option value="4">⭐⭐⭐⭐</option>
-      <option value="3">⭐⭐⭐</option>
-      <option value="2">⭐⭐</option>
-      <option value="1">⭐</option>
-    </select>
-  </div>
-  <div class="form-group">
-    <label for="rideNotes">Additional Notes:</label>
-    <textarea id="rideNotes" placeholder="Any special instructions..."></textarea>
-  </div>
-  <button type="submit" class="btn">🚗 Add Ride</button>
-</form>
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('addRideModal')">×</span>
+        <h2>➕ Add New Ride</h2>
+        <form id="addRideForm" onsubmit="addRide(event)">
+            <div class="form-group">
+                <label for="customerName">Customer Name: *</label>
+                <input type="text" id="customerName" required placeholder="Enter customer's full name">
+            </div>
+            <div class="form-group">
+                <label for="customerPhone">Phone Number: *</label>
+                <input type="tel" id="customerPhone" required placeholder="+1 (555) 123-4567">
+            </div>
+            <div class="form-group">
+                <label for="customerEmail">Email (Optional):</label>
+                <input type="email" id="customerEmail" placeholder="customer@email.com">
+            </div>
+            <div class="form-group">
+                <label for="pickupLocation">Pickup Location: *</label>
+                <input type="text" id="pickupLocation" required placeholder="123 Main St, City, State" list="pickupSuggestions">
+                <datalist id="pickupSuggestions">
+                    <!-- Populated by JavaScript -->
+                </datalist>
+            </div>
+            <div class="form-group">
+                <label for="dropoffLocation">Drop-off Location: *</label>
+                <input type="text" id="dropoffLocation" required placeholder="456 Oak Ave, City, State" list="dropoffSuggestions">
+                <datalist id="dropoffSuggestions">
+                    <!-- Populated by JavaScript -->
+                </datalist>
+            </div>
+            <div class="form-group">
+                <label for="rideDate">Date: *</label>
+                <input type="date" id="rideDate" required>
+            </div>
+            <div class="form-group">
+                <label for="rideTime">Time: *</label>
+                <input type="time" id="rideTime" required>
+            </div>
+            <div class="form-group">
+                <label for="numPassengers">Number of Passengers:</label>
+                <select id="numPassengers">
+                    <option value="1">1 Passenger</option>
+                    <option value="2">2 Passengers</option>
+                    <option value="3">3 Passengers</option>
+                    <option value="4">4 Passengers</option>
+                    <option value="5">5+ Passengers</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="numLuggage">Number of Luggage:</label>
+                <select id="numLuggage">
+                    <option value="0">No Luggage</option>
+                    <option value="1">1 Bag</option>
+                    <option value="2">2 Bags</option>
+                    <option value="3">3 Bags</option>
+                    <option value="4">4+ Bags</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="ridePrice">Price ($): *</label>
+                <input type="number" id="ridePrice" step="0.01" min="0" required placeholder="0.00">
+            </div>
+            <div class="form-group">
+                <label for="ridePriority">Priority:</label>
+                <select id="ridePriority">
+                    <option value="low">🟢 Low Priority</option>
+                    <option value="medium" selected>🟡 Medium Priority</option>
+                    <option value="high">🔴 High Priority</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="rideNotes">Notes (Optional):</label>
+                <textarea id="rideNotes" rows="3" placeholder="Special instructions, accessibility needs, etc."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="customerPhoto">Customer Photo (Optional):</label>
+                <div class="photo-upload" onclick="document.getElementById('customerPhotoInput').click()">
+                    <input type="file" id="customerPhotoInput" accept="image/*" style="display: none;" onchange="handleCustomerPhotoUpload(event)">
+                    <div class="upload-icon">📷</div>
+                    <p>Tap to add customer photo</p>
+                    <img id="customerPhotoPreview" class="photo-preview" style="display: none;">
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="submit" class="btn btn-primary" style="flex: 1;">
+                    ✅ Add Ride
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="generateConfirmationReceipt()" style="flex: 1;">
+                    📋 Preview Receipt
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
-</div>
-<!-- END BLOCK B4 -->
 
+<!-- Confirmation Receipt Modal -->
+<div id="confirmationReceiptModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal('confirmationReceiptModal')">×</span>
+        <h2>📋 Ride Confirmation Receipt</h2>
+        <div id="confirmationReceiptContent" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <!-- Receipt content will be generated by JavaScript -->
+        </div>
+        <div style="display: flex; gap: 10px; margin-top: 20px;">
+            <button class="btn btn-primary" onclick="copyReceiptToClipboard()" style="flex: 1;">
+                📋 Copy Receipt
+            </button>
+            <button class="btn btn-secondary" onclick="shareReceiptViaSMS()" style="flex: 1;">
+                💬 Send via SMS
+            </button>
+            <button class="btn btn-secondary" onclick="shareReceiptViaEmail()" style="flex: 1;">
+                ✉️ Send via Email
+            </button>
+        </div>
+    </div>
+</div>
 <!-- =============================================================================== -->
 <!-- END BLOCK B4 -->
 <!-- =============================================================================== -->
@@ -2596,7 +2662,7 @@ let appSettings = {
     offlineMode: false
 };
 
-let savedDrivers = []; // Store previously used drivers and ratings
+let driverProfile = {
     name: 'John Driver',
     phone: '+1 (555) 123-4567',
     email: 'john.driver@email.com',
@@ -3031,121 +3097,128 @@ function resetEditCustomerForm() {
 /* NAVIGATION FUNCTIONS */
 /* =============================================================================== */
 function showHome() {
-setActiveNav(0);
+    setActiveNav(0);
+    closeAllModals();
 }
 
 function showToday() {
-setActiveNav(1);
-showTodaysRides();
+    setActiveNav(1);
+    showTodaysRides();
 }
 
 function showTomorrow() {
-setActiveNav(2);
-showTomorrowsRides();
+    setActiveNav(2);
+    showTomorrowsRides();
 }
 
 function showFuture() {
-setActiveNav(3);
-showFutureRides();
+    setActiveNav(3);
+    showFutureRides();
 }
 
 function showAnalytics() {
-setActiveNav(4);
-updateAnalytics();
-const analyticsModal = document.getElementById('analyticsModal');
-if (analyticsModal) {
-    analyticsModal.classList.add('open');
-    drawPerformanceChart();
-    displayTopCustomers();
-}
+    setActiveNav(4);
+    updateAnalytics();
+    const analyticsModal = document.getElementById('analyticsModal');
+    if (analyticsModal) {
+        showModal('analyticsModal');
+        setTimeout(() => {
+            drawPerformanceChart();
+            displayTopCustomers();
+            updateAnalyticsData();
+        }, 100);
+    }
 }
 
 function showCustomers() {
-setActiveNav(5);
-displayCustomers(customers);
-const customersModal = document.getElementById('customersModal');
-if (customersModal) {
-    customersModal.classList.add('open');
-}
+    setActiveNav(5);
+    displayCustomers(customers);
+    showModal('customersModal');
 }
 
 function setActiveNav(index) {
-const navItems = document.querySelectorAll('.bottom-nav .nav-item');
-navItems.forEach((item, i) => {
-    if (i === index) {
-        item.classList.add('active');
-    } else {
-        item.classList.remove('active');
-    }
-});
+    // Update bottom navigation
+    const navItems = document.querySelectorAll('.bottom-nav .nav-item');
+    navItems.forEach((item, i) => {
+        if (i === index) {
+            item.classList.add('active');
+        } else {
+            item.classList.remove('active');
+        }
+    });
+    
+    // Update nav buttons
+    const navButtons = document.querySelectorAll('.nav-btn');
+    navButtons.forEach((button, i) => {
+        if (i === index) {
+            button.classList.add('active');
+        } else {
+            button.classList.remove('active');
+        }
+    });
 }
 
 function showTodaysRides() {
-const today = new Date().toISOString().split('T')[0];
-const todaysRides = rides.filter(ride => ride.date === today);
-const ridesModalTitle = document.getElementById('ridesModalTitle');
-if (ridesModalTitle) {
-    ridesModalTitle.textContent = "📅 Today's Rides";
-}
-displayRides(todaysRides);
-const ridesModal = document.getElementById('ridesModal');
-if (ridesModal) {
-    ridesModal.classList.add('open');
-}
-currentFilter = 'all';
-resetFilterTabs();
+    const today = new Date().toISOString().split('T')[0];
+    const todaysRides = rides.filter(ride => ride.date === today);
+    const ridesModalTitle = document.getElementById('ridesModalTitle');
+    if (ridesModalTitle) {
+        ridesModalTitle.textContent = "📅 Today's Rides";
+    }
+    displayRides(todaysRides);
+    showModal('ridesModal');
+    currentFilter = 'all';
+    resetFilterTabs();
 }
 
 function showTomorrowsRides() {
-const tomorrow = new Date();
-tomorrow.setDate(tomorrow.getDate() + 1);
-const tomorrowStr = tomorrow.toISOString().split('T')[0];
-const tomorrowsRides = rides.filter(ride => ride.date === tomorrowStr);
-const ridesModalTitle = document.getElementById('ridesModalTitle');
-if (ridesModalTitle) {
-    ridesModalTitle.textContent = "📆 Tomorrow's Rides";
-}
-displayRides(tomorrowsRides);
-const ridesModal = document.getElementById('ridesModal');
-if (ridesModal) {
-    ridesModal.classList.add('open');
-}
-currentFilter = 'all';
-resetFilterTabs();
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const tomorrowsRides = rides.filter(ride => ride.date === tomorrowStr);
+    const ridesModalTitle = document.getElementById('ridesModalTitle');
+    if (ridesModalTitle) {
+        ridesModalTitle.textContent = "📆 Tomorrow's Rides";
+    }
+    displayRides(tomorrowsRides);
+    showModal('ridesModal');
+    currentFilter = 'all';
+    resetFilterTabs();
 }
 
 function showFutureRides() {
-const dayAfterTomorrow = new Date();
-dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
-const futureRides = rides.filter(ride => new Date(ride.date) >= dayAfterTomorrow);
-const ridesModalTitle = document.getElementById('ridesModalTitle');
-if (ridesModalTitle) {
-    ridesModalTitle.textContent = "🔮 Future Rides";
-}
-displayRides(futureRides);
-const ridesModal = document.getElementById('ridesModal');
-if (ridesModal) {
-    ridesModal.classList.add('open');
-}
-currentFilter = 'all';
-resetFilterTabs();
-}
-
-function showAddRideModal() {
-updateDriverSuggestions();
-showModal('addRideModal');
+    const dayAfterTomorrow = new Date();
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
+    const futureRides = rides.filter(ride => new Date(ride.date) >= dayAfterTomorrow);
+    const ridesModalTitle = document.getElementById('ridesModalTitle');
+    if (ridesModalTitle) {
+        ridesModalTitle.textContent = "🔮 Future Rides";
+    }
+    displayRides(futureRides);
+    showModal('ridesModal');
+    currentFilter = 'all';
+    resetFilterTabs();
 }
 
 function resetFilterTabs() {
-const filterTabs = document.querySelectorAll('.filter-tabs .filter-tab');
-filterTabs.forEach(tab => {
-    if (tab.textContent.toLowerCase().includes('all')) {
-        tab.classList.add('active');
-    } else {
-        tab.classList.remove('active');
-    }
-});
+    const filterTabs = document.querySelectorAll('.filter-tabs .filter-tab');
+    filterTabs.forEach(tab => {
+        if (tab.textContent.toLowerCase().includes('all')) {
+            tab.classList.add('active');
+        } else {
+            tab.classList.remove('active');
+        }
+    });
 }
+
+function closeAllModals() {
+    const modals = document.querySelectorAll('.modal');
+    modals.forEach(modal => {
+        modal.classList.remove('open');
+        setTimeout(() => modal.style.display = 'none', 300);
+    });
+}
+
 /* =============================================================================== */
 /* DRIVER PROFILE MANAGEMENT */
 /* =============================================================================== */
@@ -3296,45 +3369,6 @@ async function resetToDefaults() {
         updateDriverProfileDisplay();
         closeModal('editProfileModal');
         showAlert('Profile Reset', 'Driver profile has been reset to default values.');
-    }
-}
-
-// Driver management functions
-function saveDriverInfo(driverName, rating) {
-    const existingDriverIndex = savedDrivers.findIndex(d => d.name === driverName);
-    if (existingDriverIndex >= 0) {
-        // Update existing driver rating (average of all ratings)
-        const existingDriver = savedDrivers[existingDriverIndex];
-        existingDriver.totalRatings += 1;
-        existingDriver.ratingSum += rating;
-        existingDriver.averageRating = (existingDriver.ratingSum / existingDriver.totalRatings).toFixed(1);
-    } else {
-        // Add new driver
-        savedDrivers.push({
-            name: driverName,
-            averageRating: rating.toFixed(1),
-            totalRatings: 1,
-            ratingSum: rating,
-            lastUsed: new Date().toISOString()
-        });
-    }
-    localStorage.setItem('ktransport360_savedDrivers', JSON.stringify(savedDrivers));
-}
-
-function loadSavedDrivers() {
-    const saved = localStorage.getItem('ktransport360_savedDrivers');
-    if (saved) {
-        savedDrivers = JSON.parse(saved);
-    }
-    updateDriverList();
-}
-
-function updateDriverList() {
-    const driverList = document.getElementById('driverList');
-    if (driverList) {
-        driverList.innerHTML = savedDrivers.map(driver => 
-            `<option value="${driver.name}">${driver.name} (${driver.averageRating}⭐)</option>`
-        ).join('');
     }
 }
 
@@ -3524,254 +3558,164 @@ function triggerEmergency() {
 <!-- BLOCK C3: RIDE MANAGEMENT FUNCTIONS -->
 <!-- Function: Add, edit, update rides, customer management, confirmation receipts -->
 <!-- =============================================================================== -->
-<!-- BLOCK C3: RIDE MANAGEMENT FUNCTIONS -->
-<!-- Function: Add, edit, update rides, customer management, confirmation receipts -->
-<!-- =============================================================================== -->
 
 <script>
+/* =============================================================================== */
+/* RIDE MANAGEMENT FUNCTIONS */
+/* =============================================================================== */
+function showAddRideModal() {
+    resetAddRideForm();
+    setTodaysDate();
+    showModal('addRideModal');
+}
+
 function addRide(event) {
     event.preventDefault();
-
-    const ride = {
-        customerName: document.getElementById("customerName").value,
-        customerPhone: document.getElementById("customerPhone").value,
-        customerEmail: document.getElementById("customerEmail").value,
-        pickupLocation: document.getElementById("pickupLocation").value,
-        dropoffLocation: document.getElementById("dropoffLocation").value,
-        assignedDriver: document.getElementById("assignedDriver").value,
-        driverRating: document.getElementById("driverRating").value,
-        rideNotes: document.getElementById("rideNotes").value,
-        status: "scheduled",
-        timestamp: new Date().toISOString()
-    };
-
-    // Save driver to list for reuse
-    if (!savedDrivers.includes(ride.assignedDriver)) {
-        savedDrivers.push(ride.assignedDriver);
-        updateDriverList();
-    }
-
-    rides.push(ride);
-    localStorage.setItem("rides", JSON.stringify(rides));
-    displayRides();
-    showConfirmation(ride);
-    closeModal('addRideModal');
-    event.target.reset();
-}
-
-function updateDriverList() {
-    const list = document.getElementById("driverList");
-    list.innerHTML = "";
-    savedDrivers.forEach(driver => {
-        const option = document.createElement("option");
-        option.value = driver;
-        list.appendChild(option);
-    });
-}
-
-function showConfirmation(ride) {
-    const message = `
-        <strong>Ride Confirmed!</strong><br><br>
-        <b>Name:</b> ${ride.customerName}<br>
-        <b>Phone:</b> ${ride.customerPhone}<br>
-        <b>Pickup:</b> ${ride.pickupLocation}<br>
-        <b>Drop-off:</b> ${ride.dropoffLocation}<br>
-        <b>Driver:</b> ${ride.assignedDriver}<br>
-        <b>Rating:</b> ${'⭐'.repeat(parseInt(ride.driverRating))}<br>
-        <b>Notes:</b> ${ride.rideNotes || 'None'}<br>
-        <br>Status: <b>Scheduled</b>
-    `;
-showAlert("✅ Ride Added", message).then(() => {
-    // Ask how to send the confirmation
-    const sendMethod = prompt("Send confirmation to customer?\nType 'email', 'text', or 'no'");
-
-    if (sendMethod === "email") {
-        sendEmailConfirmation(ride);
-    } else if (sendMethod === "text") {
-        sendTextConfirmation(ride);
-    } else {
-        console.log("Confirmation not sent.");
-    }
-});
-
-function sendEmailConfirmation(ride) {
-    if (!ride.customerEmail) return alert("No email provided.");
     
-    const body = `
-        Ride Confirmed!<br>
-        Name: ${ride.customerName}<br>
-        Phone: ${ride.customerPhone}<br>
-        Pickup: ${ride.pickupLocation}<br>
-        Drop-off: ${ride.dropoffLocation}<br>
-        Driver: ${ride.assignedDriver}<br>
-        Rating: ${'⭐'.repeat(parseInt(ride.driverRating))}<br>
-        Notes: ${ride.rideNotes || 'None'}<br>
-        Status: Scheduled
-    `;
-
-    // If using EmailJS (client-side), add your emailJS logic here:
-    emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
-        to_email: ride.customerEmail,
-        message_html: body
-    }).then(
-        () => alert("📧 Email sent successfully!"),
-        error => alert("Email failed to send: " + error.text)
-    );
-}
-
-function sendTextConfirmation(ride) {
-    if (!ride.customerPhone) return alert("No phone number provided.");
-
-    const body = `
-Ride Confirmed!
-Name: ${ride.customerName}
-Pickup: ${ride.pickupLocation}
-Drop-off: ${ride.dropoffLocation}
-Driver: ${ride.assignedDriver}
-Rating: ${ride.driverRating}⭐
-Status: Scheduled
-`;
-
-    // Normally, you would send this via Twilio via backend or Zapier webhook
-    // Here's a placeholder you can connect to your server endpoint or Firebase function
-    fetch("https://your-sms-endpoint.com/send", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            to: ride.customerPhone,
-            message: body
-        })
-    })
-    .then(res => res.ok ? alert("📱 Text message sent!") : alert("Failed to send text."))
-    .catch(err => alert("SMS Error: " + err.message));
-}
-
-
-</script>
-<!-- END BLOCK C3 -->
-
-<script>
-/* */ =============================================================================== -->
-/* */ BLOCK 9F: NAVIGATION FUNCTIONS -->
-/* */ Function: Handle app navigation, show different ride views, and manage active navigation states -->
-/* */ =============================================================================== -->
-// --- Navigation Functions ---
-function showHome() {
-setActiveNav(0);
-}
-
-function showToday() {
-setActiveNav(1);
-showTodaysRides();
-}
-
-function showTomorrow() {
-setActiveNav(2);
-showTomorrowsRides();
-}
-
-function showFuture() {
-setActiveNav(3);
-showFutureRides();
-}
-
-function showAnalytics() {
-setActiveNav(4);
-updateAnalytics();
-const analyticsModal = document.getElementById('analyticsModal');
-if (analyticsModal) {
-    analyticsModal.classList.add('open');
-    drawPerformanceChart();
-    displayTopCustomers();
-}
-}
-
-function showCustomers() {
-setActiveNav(5);
-displayCustomers(customers);
-const customersModal = document.getElementById('customersModal');
-if (customersModal) {
-    customersModal.classList.add('open');
-}
-}
-
-function setActiveNav(index) {
-const navItems = document.querySelectorAll('.bottom-nav .nav-item');
-navItems.forEach((item, i) => {
-    if (i === index) {
-        item.classList.add('active');
-    } else {
-        item.classList.remove('active');
+    // Get form values
+    const formData = {
+        customerName: document.getElementById('customerName')?.value,
+        customerPhone: document.getElementById('customerPhone')?.value,
+        customerEmail: document.getElementById('customerEmail')?.value || '',
+        pickupLocation: document.getElementById('pickupLocation')?.value,
+        dropoffLocation: document.getElementById('dropoffLocation')?.value,
+        date: document.getElementById('rideDate')?.value,
+        time: document.getElementById('rideTime')?.value,
+        price: parseFloat(document.getElementById('ridePrice')?.value || 0),
+        priority: document.getElementById('ridePriority')?.value || 'medium',
+        notes: document.getElementById('rideNotes')?.value || '',
+        numPassengers: parseInt(document.getElementById('numPassengers')?.value || 1),
+        numLuggage: parseInt(document.getElementById('numLuggage')?.value || 0)
+    };
+    
+    // Validation
+    const requiredFields = ['customerName', 'customerPhone', 'pickupLocation', 'dropoffLocation', 'date', 'time'];
+    const missingFields = requiredFields.filter(field => !formData[field]);
+    
+    if (missingFields.length > 0) {
+        showErrorMessage(`Please fill in all required fields: ${missingFields.join(', ')}`);
+        return;
     }
-});
-}
-
-function showTodaysRides() {
-const today = new Date().toISOString().split('T')[0];
-const todaysRides = rides.filter(ride => ride.date === today);
-const ridesModalTitle = document.getElementById('ridesModalTitle');
-if (ridesModalTitle) {
-    ridesModalTitle.textContent = "📅 Today's Rides";
-}
-displayRides(todaysRides);
-const ridesModal = document.getElementById('ridesModal');
-if (ridesModal) {
-    ridesModal.classList.add('open');
-}
-currentFilter = 'all';
-resetFilterTabs();
-}
-
-function showTomorrowsRides() {
-const tomorrow = new Date();
-tomorrow.setDate(tomorrow.getDate() + 1);
-const tomorrowStr = tomorrow.toISOString().split('T')[0];
-const tomorrowsRides = rides.filter(ride => ride.date === tomorrowStr);
-const ridesModalTitle = document.getElementById('ridesModalTitle');
-if (ridesModalTitle) {
-    ridesModalTitle.textContent = "📆 Tomorrow's Rides";
-}
-displayRides(tomorrowsRides);
-const ridesModal = document.getElementById('ridesModal');
-if (ridesModal) {
-    ridesModal.classList.add('open');
-}
-currentFilter = 'all';
-resetFilterTabs();
-}
-
-function showFutureRides() {
-const dayAfterTomorrow = new Date();
-dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2);
-const futureRides = rides.filter(ride => new Date(ride.date) >= dayAfterTomorrow);
-const ridesModalTitle = document.getElementById('ridesModalTitle');
-if (ridesModalTitle) {
-    ridesModalTitle.textContent = "🔮 Future Rides";
-}
-displayRides(futureRides);
-const ridesModal = document.getElementById('ridesModal');
-if (ridesModal) {
-    ridesModal.classList.add('open');
-}
-currentFilter = 'all';
-resetFilterTabs();
-}
-
-function showAddRideModal() {
-updateDriverSuggestions();
-showModal('addRideModal');
-}
-
-function resetFilterTabs() {
-const filterTabs = document.querySelectorAll('.filter-tabs .filter-tab');
-filterTabs.forEach(tab => {
-    if (tab.textContent.toLowerCase().includes('all')) {
-        tab.classList.add('active');
-    } else {
-        tab.classList.remove('active');
+    
+    if (formData.price <= 0) {
+        showErrorMessage('Please enter a valid price greater than $0.00');
+        return;
     }
-});
+    
+    // Create new ride object
+    const newRide = {
+        id: Date.now(),
+        ...formData,
+        status: 'scheduled',
+        createdAt: new Date().toISOString(),
+        customerPhoto: null,
+        rating: null,
+        feedback: null
+    };
+    
+    // Add customer photo if uploaded
+    const customerPhotoPreview = document.getElementById('customerPhotoPreview');
+    if (customerPhotoPreview && customerPhotoPreview.style.display !== 'none') {
+        newRide.customerPhoto = customerPhotoPreview.src;
+    }
+    
+    // Add ride to array
+    rides.push(newRide);
+    saveRides();
+    
+    // Update customer database
+    updateCustomerDatabase(newRide);
+    
+    // Add addresses to database
+    addToAddressDatabase(formData.pickupLocation);
+    addToAddressDatabase(formData.dropoffLocation);
+    
+    // Update analytics and UI
+    updateAnalytics();
+    updateNotificationBadges();
+    
+    // Close modal and show success
+    closeModal('addRideModal');
+    showSuccessMessage(`✅ Ride for ${formData.customerName} added successfully!`);
+    
+    console.log('New ride added:', newRide);
 }
+
+function handleCustomerPhotoUpload(event) {
+    const file = event.target.files[0];
+    if (file) {
+        if (file.size > 5 * 1024 * 1024) { // 5MB limit
+            showErrorMessage('Photo file size must be less than 5MB');
+            return;
+        }
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const customerPhotoPreview = document.getElementById('customerPhotoPreview');
+            if (customerPhotoPreview) {
+                customerPhotoPreview.src = e.target.result;
+                customerPhotoPreview.style.display = 'block';
+            }
+            showSuccessMessage('📷 Customer photo selected!');
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+function updateCustomerDatabase(ride) {
+    let customer = customers.find(c => c.phone === ride.customerPhone);
+    
+    if (customer) {
+        // Update existing customer
+        customer.totalRides++;
+        customer.totalSpent += ride.price;
+        customer.lastRide = ride.date;
+        customer.avgRating = ((customer.avgRating * (customer.totalRides - 1)) + 5) / customer.totalRides;
+        
+        // Add new preferred locations
+        if (!customer.preferredLocations.includes(ride.pickupLocation)) {
+            customer.preferredLocations.push(ride.pickupLocation);
+        }
+        if (!customer.preferredLocations.includes(ride.dropoffLocation)) {
+            customer.preferredLocations.push(ride.dropoffLocation);
+        }
+        
+        // Update name and email if provided
+        if (ride.customerName && ride.customerName !== customer.name) {
+            customer.name = ride.customerName;
+        }
+        if (ride.customerEmail && ride.customerEmail !== customer.email) {
+            customer.email = ride.customerEmail;
+        }
+    } else {
+        // Create new customer
+        customer = {
+            id: customers.length + 1,
+            name: ride.customerName,
+            phone: ride.customerPhone,
+            email: ride.customerEmail,
+            totalRides: 1,
+            totalSpent: ride.price,
+            avgRating: 5.0,
+            isVIP: false,
+            lastRide: ride.date,
+            preferredLocations: [ride.pickupLocation, ride.dropoffLocation].filter((loc, index, arr) => arr.indexOf(loc) === index),
+            notes: '',
+            photo: ride.customerPhoto || null,
+            createdAt: new Date().toISOString()
+        };
+        customers.push(customer);
+    }
+    
+    // Check if customer should be VIP (5+ rides or $500+ spent)
+    if (customer.totalRides >= 5 || customer.totalSpent >= 500) {
+        customer.isVIP = true;
+    }
+    
+    saveCustomers();
+    console.log('Customer database updated:', customer);
+}
+
 /* =============================================================================== */
 /* RIDE EDITING AND STATUS MANAGEMENT */
 /* =============================================================================== */
@@ -4161,38 +4105,96 @@ function filterRidesByStatus(status) {
 /* RIDE DISPLAY FUNCTIONS */
 /* =============================================================================== */
 function displayRides(ridesToShow) {
-const ridesList = document.getElementById('ridesList');
-if (ridesToShow.length === 0) {
-    ridesList.innerHTML = `
-        <div class="empty-state">
-            <div class="empty-state-icon">🚗</div>
-            <h3>No rides found</h3>
-            <p>No rides match your search criteria.</p>
-        </div>
-    `;
-    return;
+    const ridesList = document.getElementById('ridesList');
+    if (!ridesList) return;
+    
+    if (ridesToShow.length === 0) {
+        ridesList.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-state-icon">🚗</div>
+                <h3>No rides found</h3>
+                <p>No rides match your search criteria. Try adjusting your filters or search terms.</p>
+            </div>
+        `;
+        return;
+    }
+    
+    // Sort rides by date and time
+    const sortedRides = ridesToShow.sort((a, b) => {
+        const dateTimeA = new Date(`${a.date}T${a.time}`);
+        const dateTimeB = new Date(`${b.date}T${b.time}`);
+        return dateTimeA - dateTimeB;
+    });
+    
+    ridesList.innerHTML = sortedRides.map(ride => {
+        const priorityIcon = ride.priority === 'high' ? '🔴' : ride.priority === 'medium' ? '🟡' : '🟢';
+        const statusColor = {
+            'scheduled': '#1976d2',
+            'in-progress': '#f57c00',
+            'completed': '#388e3c',
+            'cancelled': '#d32f2f'
+        }[ride.status] || '#666';
+        
+        const formattedDate = new Date(ride.date).toLocaleDateString('en-US', { 
+            weekday: 'short', 
+            month: 'short', 
+            day: 'numeric' 
+        });
+        
+        const formattedTime = new Date(`2000-01-01T${ride.time}`).toLocaleTimeString('en-US', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
+        
+        return `
+            <div class="ride-item priority-${ride.priority}" data-ride-id="${ride.id}">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+                    <div style="flex: 1;">
+                        <h4 style="margin: 0 0 5px 0; color: #333; cursor: pointer;" onclick="showRideDetails(${ride.id})">${ride.customerName}</h4>
+                        <p style="margin: 2px 0; color: #666; font-size: 14px;">📞 ${ride.customerPhone}</p>
+                        ${ride.customerEmail ? `<p style="margin: 2px 0; color: #666; font-size: 14px;">✉️ ${ride.customerEmail}</p>` : ''}
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="ride-status" style="background: ${statusColor}; color: white; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase;">
+                            ${ride.status.replace('-', ' ')}
+                        </span>
+                        ${ride.priority === 'high' ? '<div style="color: #f44336; font-weight: bold; margin-top: 5px; font-size: 12px;">🔥 HIGH PRIORITY</div>' : ''}
+                    </div>
+                </div>
+                
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+                    <p style="margin: 2px 0; font-size: 14px;"><strong>📍 Pickup:</strong> ${ride.pickupLocation}</p>
+                    <p style="margin: 2px 0; font-size: 14px;"><strong>🎯 Destination:</strong> ${ride.dropoffLocation}</p>
+                    <p style="margin: 2px 0; font-size: 14px;"><strong>📅 When:</strong> ${formattedDate} at ${formattedTime}</p>
+                    <p style="margin: 2px 0; font-size: 14px;"><strong>💰 Fare:</strong> $${ride.price.toFixed(2)}</p>
+                    <p style="margin: 2px 0; font-size: 14px;"><strong>👥 Passengers:</strong> ${ride.numPassengers || 1} | <strong>🧳 Luggage:</strong> ${ride.numLuggage || 0}</p>
+                    ${ride.notes ? `<p style="margin: 5px 0; font-size: 14px;"><strong>📝 Notes:</strong> ${ride.notes}</p>` : ''}
+                    <div style="margin-top: 5px;">
+                        <span style="font-size: 12px; color: #666;">${priorityIcon} ${ride.priority.toUpperCase()} PRIORITY</span>
+                    </div>
+                </div>
+                
+                <div class="ride-actions" style="display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap;">
+                    <button class="btn-small btn-edit" onclick="editRide(${ride.id})" title="Edit ride details">✏️ Edit</button>
+                   ${ride.status === 'scheduled' ? `<button class="btn-small btn-complete" onclick="startRide(${ride.id})" title="Picked up" style="padding: 18px 32px; font-size: 1.2rem;">🚗 PICKED UP</button>` : ''}
+                    ${ride.status === 'in-progress' ? `<button class="btn-small btn-complete" onclick="completeRide(${ride.id})" title="Mark as completed">✅ Complete</button>` : ''}
+                    ${ride.status !== 'completed' && ride.status !== 'cancelled' ? `<button class="btn-small btn-cancel" onclick="cancelRide(${ride.id})" title="Cancel ride">❌ Cancel</button>` : ''}
+                    <button class="btn-small btn-primary" onclick="generateRideReceiptForRide(${ride.id})" title="Generate receipt">📋 Receipt</button>
+                </div>
+                
+                <div class="communication-buttons">
+                    <button class="comm-btn call" onclick="callCustomerForRide('${ride.customerPhone}')" title="Call customer">📞 Call</button>
+                    <button class="comm-btn sms" onclick="smsCustomerForRide('${ride.customerPhone}')" title="Send SMS">💬 SMS</button>
+                    <button class="comm-btn whatsapp" onclick="whatsappCustomerForRide('${ride.customerPhone}')" title="WhatsApp">📱 WhatsApp</button>
+                    ${ride.customerEmail ? `<button class="comm-btn email" onclick="emailCustomerForRide('${ride.customerEmail}')" title="Send email">✉️ Email</button>` : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
 }
 
-ridesList.innerHTML = ridesToShow.map(ride => `
-<div class="ride-item priority-${ride.priority}" data-ride-id="${ride.id}">
-<div style="display: flex; justify-content: space-between; align-items: flex-start;">
-<div style="flex: 1;">
-<h4>${ride.customerName}</h4>
-<p>📞 ${ride.customerPhone}</p>
-<p>📍 ${ride.pickupLocation}</p>
-<p>🎯 ${ride.dropoffLocation}</p>
-<p>⏰ ${ride.date} at ${ride.time}</p>
-<p>💰 $${ride.price.toFixed(2)}</p>
-${ride.assignedDriver ? `<p>🚗 Driver: ${ride.assignedDriver} (${ride.driverRating}⭐)</p>` : ''}
-${ride.notes ? `<p>📝 ${ride.notes}</p>` : ''}
-</div>
-<div style="text-align: right;">
-<span class="ride-status status-${ride.status}">${ride.status.toUpperCase()}</span>
-${ride.priority === 'high' ? '<div style="color: #f44336; font-weight: bold; margin-top: 5px;">🔥 HIGH PRIORITY</div>' : ''}
-</div>
-</div>
-// ... rest of the existing ride actions code
-`).join('');}/* =============================================================================== */
+/* =============================================================================== */
 /* RIDE DETAILS MODAL */
 /* =============================================================================== */
 function showRideDetails(rideId) {
@@ -5706,57 +5708,27 @@ async function deleteCustomer() {
     }
 }
 
-function addRide(event) {
-    event.preventDefault();
-    
-    const customerName = document.getElementById('customerName');
-    const customerPhone = document.getElementById('customerPhone');
-    const customerEmail = document.getElementById('customerEmail');
-    const pickupLocation = document.getElementById('pickupLocation');
-    const dropoffLocation = document.getElementById('dropoffLocation');
-    const assignedDriver = document.getElementById('assignedDriver');
-    const driverRating = document.getElementById('driverRating');
-    const rideDate = document.getElementById('rideDate');
-    const rideTime = document.getElementById('rideTime');
-    const ridePrice = document.getElementById('ridePrice');
-    const ridePriority = document.getElementById('ridePriority');
-    const rideNotes = document.getElementById('rideNotes');
-
-    if (!customerName || !customerPhone || !pickupLocation || !dropoffLocation || !rideDate || !rideTime || !ridePrice || !assignedDriver || !driverRating) {
-        showErrorMessage('Please fill in all required fields!');
+function addRideForCustomer() {
+    if (!currentCustomer) {
+        showErrorMessage('No customer selected.');
         return;
     }
-
-    const newRide = {
-        id: Date.now(),
-        customerName: customerName.value,
-        customerPhone: customerPhone.value,
-        customerEmail: customerEmail ? customerEmail.value : '',
-        pickupLocation: pickupLocation.value,
-        dropoffLocation: dropoffLocation.value,
-        assignedDriver: assignedDriver.value,
-        driverRating: parseFloat(driverRating.value),
-        date: rideDate.value,
-        time: rideTime.value,
-        price: parseFloat(ridePrice.value),
-        status: 'scheduled',
-        priority: ridePriority ? ridePriority.value : 'medium',
-        notes: rideNotes ? rideNotes.value : ''
-    };
-
-    rides.push(newRide);
-    saveRides();
-
-    // Save driver information for reuse
-    saveDriverInfo(assignedDriver.value, parseFloat(driverRating.value));
-    updateDriverList();
-
-    updateCustomerDatabase(newRide);
-    updateAnalytics();
-    updateNotificationBadges();
-    closeModal('addRideModal');
-    showSuccessMessage(`✅ Ride added successfully! Driver: ${assignedDriver.value} (${driverRating.value}⭐)`);
-    console.log('New ride added:', newRide);
+    
+    // Pre-populate add ride form with customer data
+    document.getElementById('customerName').value = currentCustomer.name;
+    document.getElementById('customerPhone').value = currentCustomer.phone;
+    if (currentCustomer.email) {
+        document.getElementById('customerEmail').value = currentCustomer.email;
+    }
+    
+    // Pre-populate with preferred location if available
+    if (currentCustomer.preferredLocations && currentCustomer.preferredLocations.length > 0) {
+        const mostUsedLocation = currentCustomer.preferredLocations[0];
+        document.getElementById('pickupLocation').value = mostUsedLocation;
+    }
+    
+    closeModal('customerDetailsModal');
+    showModal('addRideModal');
 }
 
 /* =============================================================================== */
@@ -7063,7 +7035,7 @@ async function resetAppData() {
             // Reset UI
             isDarkMode = false;
             document.body.classList.remove('dark-mode');
-            initializeApploadSavedDrivers(); // Add this line();
+            initializeApp();
             updateAnalytics();
             updateNotificationBadges();
             updateDriverProfileDisplay();
