@@ -7669,69 +7669,6 @@ function flashEmergencyScreen() {
 /* =============================================================================== */
 /* SAFETY MONITORING */
 /* =============================================================================== */
-let safetyCheckInterval = null;
-let lastActivityTime = Date.now();
-
-function initializeSafetyMonitoring() {
-    // Monitor user activity
-    const activityEvents = ['click', 'touchstart', 'keypress', 'scroll'];
-    activityEvents.forEach(event => {
-        document.addEventListener(event, updateLastActivity, true);
-    });
-    
-    // Start safety check interval (every 5 minutes)
-    safetyCheckInterval = setInterval(performSafetyCheck, 5 * 60 * 1000);
-}
-
-function updateLastActivity() {
-    lastActivityTime = Date.now();
-}
-
-function performSafetyCheck() {
-    const now = Date.now();
-    const inactiveTime = now - lastActivityTime;
-    const inactiveMinutes = Math.floor(inactiveTime / (1000 * 60));
-    
-    // Check for prolonged inactivity during business hours
-    const currentHour = new Date().getHours();
-    const isBusinessHours = currentHour >= 6 && currentHour <= 22;
-    
-    if (inactiveMinutes > 30 && isBusinessHours) {
-        showSafetyCheckPrompt(inactiveMinutes);
-    }
-    
-    // Check if driver has been working too long
-    const workStartTime = localStorage.getItem('ktransport360_workStartTime');
-    if (workStartTime) {
-        const workDuration = now - parseInt(workStartTime);
-        const workHours = workDuration / (1000 * 60 * 60);
-        
-        if (workHours > 10) {
-            showRestBreakReminder(workHours);
-        }
-    }
-}
-
-function showSafetyCheckPrompt(inactiveMinutes) {
-    showConfirm(
-        'Safety Check',
-        `You've been inactive for ${inactiveMinutes} minutes. Are you okay and safe to continue driving?`
-    ).then(response => {
-        if (response) {
-            showSuccessMessage('✅ Safety check confirmed');
-            updateLastActivity();
-        } else {
-            triggerEmergency();
-        }
-    });
-}
-
-function showRestBreakReminder(workHours) {
-    showAlert(
-        'Rest Break Reminder',
-        `You've been working for ${workHours.toFixed(1)} hours. Please consider taking a rest break for your safety and well-being.`
-    );
-}
 
 /* =============================================================================== */
 /* EMERGENCY INITIALIZATION */
